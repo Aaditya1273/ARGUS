@@ -1,0 +1,207 @@
+# =============================================================================
+# SETU — Field Memory Bridge : Docker Compose
+# =============================================================================
+# === SECURITY NOTICE ===
+# Qdrant ports (6333, 6334) are NOT exposed to the host by default.
+# They are only accessible within the Docker network (setu-net).
+# To access Qdrant from outside, uncomment the ports section or use port forwarding.
+# =============================================================================
+
+# One-command deployment:
+#   cp .env.example .env   # edit credentials
+#   docker compose up -d
+#
+# Services:
+#   qdrant          — Vector store (internal only — no host port exposure)
+#   setu-webhook    — FastAPI server: WhatsApp + Slack events + Knowledge API
+#   langbot-core    — LangBot engine: pipeline, MCP, platform adapters
+#   langbot-plugin  — LangBot plugin runtime (runs SevaMemoryPlugin)
+#   langbot-box     — (optional) Sandbox runtime for code execution
+
+# Shared defaults
+x-setu-defaults: &setu-defaults
+  restart: unless-stopped
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+networks:
+  setu-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  qdrant-data:
+  langbot-data:
+  langbot-plugins:
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # 1. Qdrant — vector store (SECURITY: no host ports exposed — internal only)
+  # ---------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:v1.13.0
+    container_name: setu-qdrant
+    <<: *setu-defaults
+    networks:
+      setu-net:
+        ipv4_address: 172.28.0.10
+    # SECURITY: Qdrant ports are NOT exposed to the host. Only internal services
+    # on the setu-net network can access it. Uncomment only if you need external
+    # access (e.g., for debugging):
+    # ports:
+    #   - "6333:6333"   # gRPC / REST (uncomment for external access)
+    #   - "6334:6334"   # Web UI (DANGER: no auth by default)
+    volumes:
+      - qdrant-data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6333
+      - QDRANT__LOG_LEVEL=info
+      # Qdrant API key for authenticated access
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:6333/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  # ---------------------------------------------------------------------------
+  # 2. SETU Webhook Server
+  # ---------------------------------------------------------------------------
+  setu-webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+      args:
+        - PYTHON_VERSION=3.12-slim
+    image: setu-webhook:latest
+    container_name: setu-webhook
+    <<: *setu-defaults
+    networks:
+      setu-net:
+        ipv4_address: 172.28.0.20
+    ports:
+      - "${WEBHOOK_SERVER_PORT:-9090}:9090"
+    volumes:
+      - ./plugins:/app/plugins
+      - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - LANGBOT_API_URL=http://langbot-core:5300
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      # PYTHONPATH is /app by default; plugin mount is at /app/plugins
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9090/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # 3. LangBot Core
+  # ---------------------------------------------------------------------------
+  langbot-core:
+    image: rockchin/langbot:latest
+    container_name: setu-langbot-core
+    <<: *setu-defaults
+    networks:
+      setu-net:
+        ipv4_address: 172.28.0.30
+    ports:
+      - "5300:5300"   # REST API / Web UI (requires auth)
+      - "2280-2285:2280-2285"  # Platform reverse-connection
+    volumes:
+      - ./data:/app/data
+      - ./plugins:/app/plugins
+      - ./skills:/app/skills
+      - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - PLUGIN__RUNTIME_WS_URL=ws://langbot-plugin:5400/control/ws
+      - BOX__RUNTIME__ENDPOINT=ws://langbot-box:5410
+      - BOX__LOCAL__HOST_ROOT=/app/data/box
+      - BOX__LOCAL__DEFAULT_WORKSPACE=default
+      - BOX__LOCAL__SKILLS_ROOT=skills
+      - BOX__LOCAL__ALLOWED_MOUNT_ROOTS=/app/data/box
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5300/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # 4. LangBot Plugin Runtime
+  # ---------------------------------------------------------------------------
+  langbot-plugin:
+    image: rockchin/langbot:latest
+    container_name: setu-langbot-plugin
+    <<: *setu-defaults
+    networks:
+      setu-net:
+        ipv4_address: 172.28.0.40
+    ports:
+      - "5400:5400"   # Plugin runtime control WebSocket
+    volumes:
+      - ./plugins:/app/plugins
+      - ./data/plugins:/app/data/plugins
+      - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    command: ["uv", "run", "--no-sync", "-m", "langbot_plugin.cli.__init__", "rt"]
+    depends_on:
+      langbot-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; s=socket.socket(); s.settimeout(3); s.connect(('localhost',5400)); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # 5. (Optional) LangBot Box Runtime
+  # ---------------------------------------------------------------------------
+  langbot-box:
+    image: rockchin/langbot:latest
+    container_name: setu-langbot-box
+    profiles: ["box", "all"]
+    <<: *setu-defaults
+    networks:
+      setu-net:
+        ipv4_address: 172.28.0.50
+    ports:
+      - "5410:5410"   # Box RPC WebSocket
+    volumes:
+      - ${LANGBOT_BOX_ROOT:-./data/box}:${LANGBOT_BOX_ROOT:-/app/data/box}
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Asia/Shanghai
+    command: ["uv", "run", "--no-sync", "-m", "langbot_plugin.cli.__init__", "box"]
+    depends_on:
+      langbot-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; s=socket.socket(); s.settimeout(3); s.connect(('localhost',5410)); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+      start_interval: 5s

@@ -1,8 +1,21 @@
-.github
-.venv
-.vscode
-.data
-.temp
-web/.next
-web/node_modules
-web/.env
+# =============================================================================
+# .dockerignore — SETU Docker build context filter
+# =============================================================================
+# Exclude everything from the Docker build context except the minimal set of
+# files the webhook server needs. This keeps `docker build` fast and prevents
+# accidental inclusion of the massive LangBot web/ directory, venvs, caches.
+#
+# Note: The compose.yml mounts ./plugins as a volume at runtime, so the
+# Dockerfile only needs webhook_server.py and requirements.txt baked in for
+# standalone runs. The COPY in Dockerfile.webhook ensures these exist even
+# without the volume mount.
+# =============================================================================
+
+# Deny everything first
+*
+
+# Then allow-list what we need (parent dirs must be included for nesting)
+!webhook_server.py
+!plugins/
+!plugins/seva_memory/
+!plugins/seva_memory/**

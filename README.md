@@ -12,6 +12,53 @@
 
 ---
 
+## 0. Quick Start — One-Command Deployment
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) (Desktop or Engine) · 5 GB free disk · Internet connection
+
+```bash
+# 1. Clone and deploy
+bash setup.sh
+
+# Or manually:
+#   cp .env.example .env
+#   docker compose up -d
+#   docker compose logs -f
+```
+
+That's it. The script will:
+1. Check for Docker + Docker Compose
+2. Create `.env` from `.env.example` (edit with your credentials)
+3. Build the webhook server image
+4. Start Qdrant, webhook server, LangBot, and plugin runtime
+5. Wait for all health checks to pass
+6. Print service URLs
+
+**Non-interactive (CI/CD):**
+```bash
+bash setup.sh --non-interactive
+```
+
+### Required Credentials (edit `.env` before use)
+
+| Variable | Where to Get It |
+|---|---|
+| `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| `SLACK_BOT_TOKEN` | [api.slack.com/apps](https://api.slack.com/apps) → OAuth & Permissions |
+| `SLACK_USER_TOKEN` | Same Slack app → User Token Scopes (`search:read`) |
+| `LANGBOT_BOT_UUID` | LangBot admin panel → Bots → Create bot |
+
+### Services (after deploy)
+
+| Service | URL | Purpose |
+|---|---|---|
+| Webhook API | `http://localhost:9090` | FastAPI: WhatsApp, Slack events, Knowledge CRUD, Metrics |
+| LangBot | `http://localhost:5300` | Admin panel, pipeline, MCP tools |
+| Qdrant Dashboard | `http://localhost:6334` | Vector store UI |
+| Health Check | `http://localhost:9090/health/detailed` | Service status |
+
+---
+
 ## 1. Introduction
 
 SETU means bridge in Sanskrit.
@@ -185,37 +232,7 @@ graph TD
     SETU->>SL: Canvas post "Weekly Memory: barmer_edu - 3 schools served"
 
 
-    # 1. Clone your rebranded fork
-git clone https://github.com/YOURNAME/setu && cd setu
-
-# 2. Python 3.11 required - fixes onnxruntime crash on 3.14
-pyenv local 3.11.9
-
-# 3. Env
-cp .env.example .env
-# Edit .env:
-# SLACK_BOT_TOKEN=xoxb-...
-# SLACK_APP_TOKEN=xapp-...
-# SLACK_USER_TOKEN=xoxp-...  # needed for RTS permission-aware search
-# OPENAI_API_KEY=sk-...
-# QDRANT_URL=http://localhost:6333
-# FIELD_OPS_CHANNEL=#field-ops
-# ADMIN_USER_IDS=U123,U456
-
-# 4. Start Qdrant + SETU
-docker compose up -d qdrant
-pip install -r plugins/seva_memory/requirements.txt
-python -m langbot run --config config/setu.yaml
-
-# Web Panel at http://localhost:5300 -> Enable Slack adapter + Seva Memory plugin
-# Webhook for WhatsApp (optional for demo)
-uvicorn plugins.seva_memory.webhook_server:app --port 8000
-
-
-
-
-
-9. Tech Stack
+## 9. Tech Stack
 Agent Framework: LangBot 3.x - Production IM platform, Universal adapters, Plugin ecosystem, Built-in MCP
 Slack: Bolt Async, RTS API, Block Kit, Canvas API, Socket Mode
 AI: OpenAI GPT-4o, GPT-4o-mini, Whisper large-v3, text-embedding-3-small, Vision
