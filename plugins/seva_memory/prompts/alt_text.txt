@@ -1,0 +1,1 @@
+Generate descriptive alt-text for accessibility for the given image. Focus on key visual elements to aid low-literacy staff.
