@@ -142,3 +142,7 @@ That starts the full stack: ClickHouse, OTel Collector, query service, React das
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
+
+
+
+"The governance and self-healing layer that turns SigNoz's observability into autonomous AI runtime operations"

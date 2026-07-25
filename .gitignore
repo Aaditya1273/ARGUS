@@ -6,6 +6,8 @@
 *.dylib
 *.test
 *.out
+helper
+
 /argus-server
 /argus-cli
 /vendor/
