@@ -1,0 +1,93 @@
+{
+  "skill_name": "signoz-mcp-setup",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "claude-desktop-hosted-custom-connector",
+      "prompt": "Configure Claude Desktop to use the hosted SigNoz Cloud MCP endpoint https://mcp.eu.signoz.cloud/mcp. Show me exactly where you would put it.",
+      "expected_output": "Agent routes the remote endpoint through Claude Desktop Settings > Connectors > Add custom connector and does not write a remote URL entry to claude_desktop_config.json. It explains that the desktop JSON file is reserved for local stdio command registrations, then gives the connector authentication/reconnect step.",
+      "assertions": [
+        {
+          "text": "Agent configures the hosted URL through Claude Desktop Custom Connectors",
+          "description": "Claude Desktop remote MCP uses the connector UI"
+        },
+        {
+          "text": "Agent does not put a remote url entry in claude_desktop_config.json",
+          "description": "The desktop JSON file does not register hosted remote MCP endpoints"
+        },
+        {
+          "text": "Agent states that claude_desktop_config.json is only used here for a local stdio command with command, args, and env",
+          "description": "The remote and local configuration contracts must remain distinct"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 1,
+      "eval_name": "claude-desktop-local-stdio-json",
+      "prompt": "I built signoz-mcp-server locally and want Claude Desktop to launch /opt/signoz/signoz-mcp-server over stdio. Configure it with SIGNOZ_URL and an environment-variable placeholder for SIGNOZ_API_KEY.",
+      "expected_output": "Agent uses claude_desktop_config.json because this is local stdio, creates a signoz mcpServers entry with command=/opt/signoz/signoz-mcp-server, args=[], and env containing SIGNOZ_URL, SIGNOZ_API_KEY placeholder, and LOG_LEVEL. It does not use a remote url field and tells the user to restart Claude Desktop.",
+      "assertions": [
+        {
+          "text": "The Claude Desktop JSON payload uses command, args, and env for the local stdio server",
+          "description": "Local binaries use the stdio registration shape"
+        },
+        {
+          "text": "The Claude Desktop JSON payload does not contain a remote url field",
+          "description": "A stdio entry must not be translated into a remote connector payload"
+        },
+        {
+          "text": "Agent avoids writing a real API key and tells the user to restart Claude Desktop",
+          "description": "Secrets stay out of tracked config examples and Desktop reloads the local entry"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "eval_name": "docs-ready-is-not-tenant-ready",
+      "prompt": "Check whether my SigNoz MCP setup is working. signoz_search_docs succeeds, but signoz_list_services returns an authentication error.",
+      "expected_output": "Agent does not use documentation-tool success to judge connectivity. It uses signoz_list_services, classifies the connection as configured but not working, and routes the user to client authentication or credential repair without changing a known-correct endpoint.",
+      "assertions": [
+        {
+          "text": "Agent does not use signoz_search_docs or signoz_fetch_doc as connectivity probes",
+          "description": "Documentation tools do not validate live SigNoz access"
+        },
+        {
+          "text": "Agent uses signoz_list_services as the connectivity probe",
+          "description": "The setup check uses the prescribed tenant-backed tool"
+        },
+        {
+          "text": "Agent classifies the state as configured-but-not-working and recommends authentication or credential repair",
+          "description": "The endpoint is reachable, but live SigNoz access is not ready"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "eval_name": "codex-repeated-cache-reset-durable-config",
+      "prompt": "My Codex SigNoz plugin keeps resetting back to not-setup after plugin updates. Fix it for http://localhost:8000/mcp and make it durable.",
+      "expected_output": "Agent updates the active bundled Codex plugin .mcp.json to http://localhost:8000/mcp and also creates or updates the native Codex MCP server named signoz using `codex mcp add signoz --url http://localhost:8000/mcp` or the equivalent `[mcp_servers.signoz]` TOML entry. It explains that plugin cache files are versioned and can be regenerated from repository placeholders, while the native Codex MCP entry persists across plugin updates. It verifies the effective URL with `codex mcp get signoz` or `codex mcp list`.",
+      "assertions": [
+        {
+          "text": "Agent identifies versioned plugin cache refresh as the reason the bundled .mcp.json reset to not-setup",
+          "description": "The root cause is cache regeneration from source defaults, not an MCP runtime bug"
+        },
+        {
+          "text": "Agent updates the current bundled Codex plugin .mcp.json to the resolved endpoint",
+          "description": "The immediate plugin install is repaired"
+        },
+        {
+          "text": "Agent creates or updates native Codex MCP config for signoz using codex mcp add or [mcp_servers.signoz]",
+          "description": "The durable fix lives outside the versioned plugin cache"
+        },
+        {
+          "text": "Agent verifies the effective signoz URL with codex mcp get or codex mcp list",
+          "description": "The outcome is checked through Codex's resolved server view"
+        }
+      ],
+      "files": []
+    }
+  ]
+}

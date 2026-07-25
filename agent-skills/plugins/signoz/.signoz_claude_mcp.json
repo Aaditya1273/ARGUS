@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcp": {
+      "type": "http",
+      "url": "${user_config.SIGNOZ_MCP_URL}"
+    }
+  }
+}
