@@ -42,6 +42,23 @@ func NewCostTracker() *CostTracker {
 	}
 }
 
+// GetPricing returns the pricing for a given model, with a sensible default.
+func (t *CostTracker) GetPricing(model string) float64 {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	if rate, ok := t.PricingTable[model]; ok {
+		return rate
+	}
+	return 0.01 // fallback generic rate
+}
+
+// SetPricing sets the pricing for a given model.
+func (t *CostTracker) SetPricing(model string, rate float64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.PricingTable[model] = rate
+}
+
 // CalculateCost computes the cost of a specific trace and updates global state.
 // Cost is emitted as an OTel metric, making it visible in SigNoz Metrics Explorer
 // and queryable via Query Builder.
@@ -71,6 +88,8 @@ func (t *CostTracker) CalculateCost(ctx *TraceCostContext) float64 {
 	if ctx.Model != "" { t.GlobalMetrics.CostPerModel[ctx.Model] += cost }
 
 	// Emit OTel metric — appears in SigNoz Metrics Explorer & Query Builder
+	// Note: uses context.Background() because CalculateCost is often called
+	// without an external context. Callers that have a context should pass it.
 	if t.costTotal != nil {
 		t.costTotal.Add(context.Background(), cost, metric.WithAttributes(
 			attribute.String("agent_id", ctx.AgentID),

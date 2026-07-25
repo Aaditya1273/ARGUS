@@ -3,7 +3,7 @@ package integrations
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -22,7 +22,7 @@ func NewWebhookDispatcher() *WebhookDispatcher {
 // Dispatch sends JSON payload
 func (w *WebhookDispatcher) Dispatch(payload interface{}) error {
 	if w.EndpointURL == "" {
-		fmt.Println("[Webhook Integration] Warning: ARGUS_WEBHOOK_URL not set. Dropping webhook.")
+		slog.Warn("[Webhook Integration] ARGUS_WEBHOOK_URL not set. Dropping webhook.")
 		return nil
 	}
 

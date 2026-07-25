@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -22,7 +23,7 @@ func NewSlackNotifier() *SlackNotifier {
 // SendAlert pushes an anomaly or governance alert to a Slack channel
 func (s *SlackNotifier) SendAlert(title string, message string) error {
 	if s.WebhookURL == "" {
-		fmt.Println("[Slack Integration] Warning: SLACK_WEBHOOK_URL not set. Dropping alert.")
+		slog.Warn("[Slack Integration] SLACK_WEBHOOK_URL not set. Dropping alert.")
 		return nil
 	}
 
@@ -33,7 +34,7 @@ func (s *SlackNotifier) SendAlert(title string, message string) error {
 
 	resp, err := http.Post(s.WebhookURL, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		return err
+		return fmt.Errorf("slack webhook post failed: %w", err)
 	}
 	defer resp.Body.Close()
 

@@ -26,15 +26,17 @@ func (d *InfiniteLoopDetector) Evaluate(ctx *engine.AgentContext) *engine.RuleRe
 	consecutive := 1
 	var lastTool string
 
-	// Iterate backwards over spans to find repeating tool calls
+	// Iterate backwards over spans to find repeating tool calls.
+	// Skip non-tool spans (LLM, chain) to account for interleaved execution.
 	for i := len(ctx.Spans) - 1; i >= 0; i-- {
 		span := ctx.Spans[i]
 		if span.Kind != "tool" {
-			break // Reset if we see an LLM or Chain span
+			continue // Skip non-tool spans, don't break (interleaved execution)
 		}
 
 		if lastTool == "" {
 			lastTool = span.Name
+			consecutive = 1
 		} else if span.Name == lastTool {
 			consecutive++
 			if consecutive >= d.MaxConsecutiveTools {
@@ -47,7 +49,7 @@ func (d *InfiniteLoopDetector) Evaluate(ctx *engine.AgentContext) *engine.RuleRe
 				}
 			}
 		} else {
-			break // Different tool
+			break // Different tool encountered — loop broken
 		}
 	}
 
