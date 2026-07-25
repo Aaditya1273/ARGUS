@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GO_VERSION: '1.22'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: ./pkg/query-service/argus/...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Build Go backend
+        run: go build ./...
+      - name: Build CLI
+        run: go build ./cmd/argus-cli/
+      - name: Build community server
+        run: go build ./cmd/community/
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run ARGUS-specific tests
+        run: go test -v -race -count=1 ./pkg/query-service/argus/...
+
+  python-sdk:
+    name: Python SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: argus-sdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+      - name: Run SDK tests
+        run: python -m pytest tests/ -v
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Lint
+        run: pnpm lint
+      - name: Type check
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build, python-sdk, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images
+        run: |
+          docker compose -f deploy/docker/docker-compose.yaml build

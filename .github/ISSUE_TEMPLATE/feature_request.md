@@ -1,0 +1,36 @@
+---
+name: Feature Request
+about: Suggest an idea for ARGUS
+title: '[FEATURE] '
+labels: enhancement
+assignees: ''
+---
+
+## Is your feature request related to a problem?
+
+A clear and concise description of what the problem is. Ex. "I'm always frustrated when [...]"
+
+## Describe the solution you'd like
+
+A clear and concise description of what you want to happen.
+
+## Describe alternatives you've considered
+
+A clear and concise description of any alternative solutions or features you've considered.
+
+## Which ARGUS engine does this affect?
+
+- [ ] Governance & Self-Healing
+- [ ] Cost Firewall
+- [ ] Agent DNA Profiler
+- [ ] Prompt Replay
+- [ ] Python SDK
+- [ ] CLI
+- [ ] Dashboard / Frontend
+- [ ] Documentation
+- [ ] Deployment / Infrastructure
+- [ ] Other
+
+## Additional context
+
+Add any other context, mockups, or examples about the feature request here.

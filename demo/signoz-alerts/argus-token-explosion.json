@@ -1,0 +1,71 @@
+{
+  "alert": "ARGUS: Token Explosion Prevention",
+  "alertType": "TRACES_BASED_ALERT",
+  "description": "Detects agents consuming excessive tokens in a single trace. Queries gen_ai.usage.total_tokens span attributes emitted by the ARGUS Python SDK via openinference instrumentation — stored in ClickHouse via the OTel trace pipeline.",
+  "ruleType": "threshold_rule",
+  "evalWindow": "5m",
+  "frequency": "1m",
+  "version": "v5",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {
+          "type": "builder_query",
+          "spec": {
+            "name": "A",
+            "signal": "traces",
+            "stepInterval": 60,
+            "disabled": false,
+            "filter": {
+              "items": [
+                {
+                  "key": {
+                    "key": "gen_ai.system",
+                    "dataType": "string",
+                    "type": "",
+                    "id": "gen_ai.system--string--Tag--false"
+                  },
+                  "op": "EXISTS",
+                  "value": ""
+                }
+              ],
+              "op": "AND"
+            },
+            "aggregations": [{"expression": "sum(gen_ai.usage.total_tokens)"}],
+            "groupBy": [
+              {
+                "key": "resource.service.name",
+                "dataType": "string",
+                "type": "",
+                "id": "resource.service.name--string--Tag--false"
+              }
+            ],
+            "legend": "{{resource.service.name}}",
+            "having": [],
+            "limit": null,
+            "orderBy": null,
+            "reduceTo": "avg",
+            "spaceAggregation": "sum",
+            "timeAggregation": "sum"
+          }
+        }
+      ]
+    },
+    "target": 50000,
+    "matchType": "1",
+    "op": "1",
+    "selectedQuery": "A"
+  },
+  "labels": {
+    "severity": "critical",
+    "argus": "true",
+    "argus.plugin": "token_explosion"
+  },
+  "annotations": {
+    "summary": "Agent `{{.resource.service.name}}` exceeded 50K tokens",
+    "description": "Token explosion detected. Total token usage exceeded 50,000 in a single run."
+  },
+  "disabled": false
+}

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argus-sdk"
+version = "0.1.0"
+description = "ARGUS: Autonomous Reliability Guardian for AI Agents. 1-line auto-instrumentation SDK."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "SigNoz / ARGUS", email = "hello@argus.io" }
+]
+dependencies = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp",
+    "openinference-instrumentation-openai",
+    "openinference-instrumentation-langchain",
+    "openinference-instrumentation-llamaindex",
+    "openinference-instrumentation-crewai",
+    "websocket-client",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "openai",
+    "langchain",
+    "crewai",
+    "llama-index"
+]

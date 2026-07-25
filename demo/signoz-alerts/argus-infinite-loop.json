@@ -1,0 +1,71 @@
+{
+  "alert": "ARGUS: Infinite Tool Loop Detection",
+  "alertType": "TRACES_BASED_ALERT",
+  "description": "Detects AI agents repeating the same tool call more than 5 times consecutively. Queries the argus.governance.violation span events emitted by pkg/query-service/argus/engine/engine.go — stored in ClickHouse via the OTel trace pipeline.",
+  "ruleType": "threshold_rule",
+  "evalWindow": "5m",
+  "frequency": "1m",
+  "version": "v5",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {
+          "type": "builder_query",
+          "spec": {
+            "name": "A",
+            "signal": "traces",
+            "stepInterval": 60,
+            "disabled": false,
+            "filter": {
+              "items": [
+                {
+                  "key": {
+                    "key": "argus.rule",
+                    "dataType": "string",
+                    "type": "",
+                    "id": "argus.rule--string--Tag--false"
+                  },
+                  "op": "IN",
+                  "value": ["Infinite Tool Loop", "infinite_loop"]
+                }
+              ],
+              "op": "AND"
+            },
+            "aggregations": [{"expression": "count()"}],
+            "groupBy": [
+              {
+                "key": "argus.agent.id",
+                "dataType": "string",
+                "type": "",
+                "id": "argus.agent.id--string--Tag--false"
+              }
+            ],
+            "legend": "{{argus.agent.id}}",
+            "having": [],
+            "limit": null,
+            "orderBy": null,
+            "reduceTo": "avg",
+            "spaceAggregation": "sum",
+            "timeAggregation": "rate"
+          }
+        }
+      ]
+    },
+    "target": 0,
+    "matchType": "1",
+    "op": "1",
+    "selectedQuery": "A"
+  },
+  "labels": {
+    "severity": "critical",
+    "argus": "true",
+    "argus.plugin": "infinite_loop"
+  },
+  "annotations": {
+    "summary": "Agent `{{.argus.agent.id}}` entered an infinite tool loop",
+    "description": "Governance detected repeated tool calls. Self-healing triggered via pkg/query-service/argus/recovery/actions/kill_agent.go."
+  },
+  "disabled": false
+}

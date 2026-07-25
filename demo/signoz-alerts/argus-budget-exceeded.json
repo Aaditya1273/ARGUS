@@ -1,0 +1,64 @@
+{
+  "alert": "ARGUS: Cost Budget Exceeded",
+  "alertType": "METRIC_BASED_ALERT",
+  "description": "Fires when an agent run exceeds the budget threshold. Queries the argus.cost.total OTel metric emitted by pkg/query-service/argus/cost/tracker.go — stored in ClickHouse via the OTLP metrics pipeline.",
+  "ruleType": "threshold_rule",
+  "evalWindow": "5m",
+  "frequency": "1m",
+  "version": "v5",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {
+          "type": "builder_query",
+          "spec": {
+            "name": "A",
+            "signal": "metrics",
+            "stepInterval": 60,
+            "disabled": false,
+            "aggregations": [
+              {
+                "expression": "sum(argus.cost.total)"
+              }
+            ],
+            "filter": {
+              "items": [],
+              "op": "AND"
+            },
+            "groupBy": [
+              {
+                "key": "agent_id",
+                "dataType": "string",
+                "type": "",
+                "id": "agent_id--string--Tag--false"
+              }
+            ],
+            "legend": "{{agent_id}}",
+            "having": [],
+            "limit": null,
+            "orderBy": null,
+            "reduceTo": "avg",
+            "spaceAggregation": "sum",
+            "timeAggregation": "sum"
+          }
+        }
+      ]
+    },
+    "target": 5.0,
+    "matchType": "1",
+    "op": "1",
+    "selectedQuery": "A"
+  },
+  "labels": {
+    "severity": "critical",
+    "argus": "true",
+    "argus.plugin": "budget_exceeded"
+  },
+  "annotations": {
+    "summary": "Agent `{{.agent_id}}` exceeded budget ($5.00)",
+    "description": "Cost firewall triggered. Run cost exceeded $5.00 threshold."
+  },
+  "disabled": false
+}

@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: ARGUS Control Plane API
+  version: 1.0.0
+  description: API for the ARGUS Autonomous Reliability Guardian for AI Agents.
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /health:
+    get:
+      summary: Health Check
+      responses:
+        '200':
+          description: OK
+  /argus/agents:
+    get:
+      summary: List all live agents
+      responses:
+        '200':
+          description: A list of agents
+  /argus/agents/{id}/kill:
+    post:
+      summary: Kill an active agent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent terminated
+  /argus/agents/{id}/pause:
+    post:
+      summary: Pause an active agent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent paused
+  /argus/agents/{id}/resume:
+    post:
+      summary: Resume a paused agent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent resumed

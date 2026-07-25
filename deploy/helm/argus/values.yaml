@@ -1,0 +1,23 @@
+replicaCount: 3
+
+image:
+  repository: argus/query-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: argus.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+
+clickhouse:
+  enabled: true
+  host: "argus-clickhouse"

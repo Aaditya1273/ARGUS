@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install ARGUS SDK
+COPY argus-sdk /app/argus-sdk
+RUN pip install -e /app/argus-sdk
+
+# Copy demo agent code
+COPY demo/agent.py /app/demo/agent.py
+COPY demo/seed.py /app/demo/seed.py
+COPY demo/verify.py /app/demo/verify.py
+
+# Install AI framework dependencies
+RUN pip install openai anthropic langchain langchain-openai langgraph crewai llama-index
+
+# Run the demo agent by default
+CMD ["python", "/app/demo/agent.py"]

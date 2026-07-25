@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "title": "ARGUS - AI Agent Intelligence (Powered by SigNoz)",
+  "description": "Real-time AI agent governance dashboard. Queries actual SigNoz trace data stored in ClickHouse — no custom instrumentation required. All panels use the gen_ai.request.model and argus.* span attributes emitted by the ARGUS Python SDK.",
+  "panels": [
+    {
+      "id": "agent-traces-per-minute",
+      "title": "Agent Traces Over Time",
+      "type": "timeseries",
+      "query": {
+        "query_type": "traces",
+        "aggregation_operator": "count",
+        "group_by": ["resource.service.name"],
+        "time_range": "last_1h"
+      },
+      "description": "Agent trace volume by service. Shows how many agent executions are being tracked."
+    },
+    {
+      "id": "model-distribution",
+      "title": "LLM Models Used by Agents",
+      "type": "piechart",
+      "query": {
+        "query_type": "traces",
+        "aggregation_operator": "count",
+        "group_by": ["gen_ai.request.model"],
+        "time_range": "last_24h"
+      },
+      "description": "Distribution of LLM models used by agents. Data comes from gen_ai.request.model span attributes."
+    },
+    {
+      "id": "agent-cost-estimate",
+      "title": "Estimated Cost by Agent (Last 24h)",
+      "type": "barchart",
+      "query": {
+        "query_type": "traces",
+        "aggregation_operator": "sum",
+        "group_by": ["argus.agent.id"],
+        "time_range": "last_24h"
+      },
+      "description": "Estimated LLM cost per agent. Uses argus.execution.cost span attributes emitted by the SDK."
+    },
+    {
+      "id": "governance-events",
+      "title": "Governance Violation Events",
+      "type": "table",
+      "query": {
+        "query_type": "traces",
+        "aggregation_operator": "count",
+        "group_by": ["argus.governance.action", "argus.agent.id"],
+        "time_range": "last_24h"
+      },
+      "description": "Governance violations detected by the ARGUS engine. Shows rule type, agent, and frequency."
+    },
+    {
+      "id": "recent-agent-spans",
+      "title": "Recent Agent Spans",
+      "type": "table",
+      "query": {
+        "query_type": "traces",
+        "aggregation_operator": "raw",
+        "limit": 20,
+        "time_range": "last_15m"
+      },
+      "description": "Most recent spans from agent executions, showing tool calls, LLM invocations, and governance events."
+    },
+    {
+      "id": "active-agents",
+      "title": "Active Agents (Last 30m)",
+      "type": "stat",
+      "query": {
+        "query_type": "traces",
+        "aggregation_operator": "count_distinct",
+        "group_by": ["argus.agent.id"],
+        "time_range": "last_30m"
+      },
+      "description": "Number of unique agents active in the last 30 minutes."
+    }
+  ],
+  "variables": [
+    {
+      "name": "agent",
+      "type": "query",
+      "query": "label_values(argus.agent.id)",
+      "includeAll": true,
+      "multi": true
+    }
+  ]
+}

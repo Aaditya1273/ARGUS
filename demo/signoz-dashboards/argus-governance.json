@@ -1,0 +1,352 @@
+{
+  "title": "ARGUS — Governance & Self-Healing",
+  "description": "Live governance violations from the ARGUS engine. Queries the argus.* span events emitted by pkg/query-service/argus/engine/engine.go via the OTel trace pipeline. All data flows through SigNoz ClickHouse — no custom storage.",
+  "tags": ["argus", "governance", "ai-agents"],
+  "widgets": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Violations (last 1h)",
+      "description": "Count of governance violations by rule type.",
+      "panelTypes": "graph",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "string",
+                "id": "argus.rule--string--NoOP--false",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "argus.rule",
+                "type": ""
+              },
+              "aggregateOperator": "count_distinct",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "11111111-1111-4111-8111-111111111111",
+                    "key": {
+                      "dataType": "string",
+                      "id": "name--string--Tag--false",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "name",
+                      "type": ""
+                    },
+                    "op": "IN",
+                    "value": ["argus.governance.violation"]
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "argus.rule--string--Tag--false",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "argus.rule",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "{{argus.rule}}",
+              "limit": null,
+              "orderBy": null,
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "id": "22222222-2222-4222-8222-222222222222",
+        "promql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "softMax": null,
+      "softMin": null,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none"
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "title": "Top Agent Violations",
+      "description": "Agents with the most governance violations.",
+      "panelTypes": "table",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "string",
+                "id": "argus.agent.id--string--Tag--false",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "argus.agent.id",
+                "type": ""
+              },
+              "aggregateOperator": "count_distinct",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "22222222-2222-4222-8222-222222222222",
+                    "key": {
+                      "dataType": "string",
+                      "id": "name--string--Tag--false",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "name",
+                      "type": ""
+                    },
+                    "op": "IN",
+                    "value": ["argus.governance.violation"]
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "argus.agent.id--string--Tag--false",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "argus.agent.id",
+                  "type": ""
+                },
+                {
+                  "dataType": "string",
+                  "id": "argus.rule--string--Tag--false",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "argus.rule",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "{{argus.agent.id}} / {{argus.rule}}",
+              "limit": 20,
+              "orderBy": [
+                {
+                  "columnName": "A",
+                  "order": "desc"
+                }
+              ],
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "id": "22222222-2222-4222-8222-222222223333",
+        "promql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "softMax": null,
+      "softMin": null,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none"
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "title": "Violations by Severity",
+      "description": "Breakdown of violations by severity level.",
+      "panelTypes": "pie",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "string",
+                "id": "argus.severity--string--NoOP--false",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "argus.severity",
+                "type": ""
+              },
+              "aggregateOperator": "count_distinct",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "33333333-3333-4333-8333-333333333333",
+                    "key": {
+                      "dataType": "string",
+                      "id": "name--string--Tag--false",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "name",
+                      "type": ""
+                    },
+                    "op": "IN",
+                    "value": ["argus.governance.violation"]
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "argus.severity--string--Tag--false",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "argus.severity",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "{{argus.severity}}",
+              "limit": null,
+              "orderBy": null,
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "id": "33333333-3333-4333-8333-333333334444",
+        "promql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "softMax": null,
+      "softMin": null,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none"
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "title": "Self-Healing Actions",
+      "description": "Count of automated recovery actions triggered by governance.",
+      "panelTypes": "graph",
+      "query": {
+        "builder": {
+          "queryData": [
+            {
+              "aggregateAttribute": {
+                "dataType": "string",
+                "id": "name--string--NoOP--false",
+                "isColumn": true,
+                "isJSON": false,
+                "key": "name",
+                "type": ""
+              },
+              "aggregateOperator": "count_distinct",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filters": {
+                "items": [
+                  {
+                    "id": "44444444-4444-4444-8444-444444444444",
+                    "key": {
+                      "dataType": "string",
+                      "id": "name--string--Tag--false",
+                      "isColumn": true,
+                      "isJSON": false,
+                      "key": "name",
+                      "type": ""
+                    },
+                    "op": "LIKE",
+                    "value": "Automated Recovery%"
+                  }
+                ],
+                "op": "AND"
+              },
+              "functions": [],
+              "groupBy": [
+                {
+                  "dataType": "string",
+                  "id": "name--string--Tag--false",
+                  "isColumn": true,
+                  "isJSON": false,
+                  "key": "name",
+                  "type": ""
+                }
+              ],
+              "having": [],
+              "legend": "{{name}}",
+              "limit": null,
+              "orderBy": null,
+              "queryName": "A",
+              "reduceTo": "avg",
+              "spaceAggregation": "sum",
+              "stepInterval": 60,
+              "timeAggregation": "rate"
+            }
+          ],
+          "queryFormulas": []
+        },
+        "clickhouse_sql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "id": "44444444-4444-4444-8444-444444445555",
+        "promql": [
+          { "disabled": true, "legend": "", "name": "A", "query": "" }
+        ],
+        "queryType": "builder"
+      },
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "softMax": null,
+      "softMin": null,
+      "stackedBarChart": false,
+      "thresholds": [],
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none"
+    }
+  ],
+  "layout": [
+    { "i": "11111111-1111-4111-8111-111111111111", "x": 0, "y": 0, "w": 6, "h": 6 },
+    { "i": "22222222-2222-4222-8222-222222222222", "x": 6, "y": 0, "w": 6, "h": 6 },
+    { "i": "33333333-3333-4333-8333-333333333333", "x": 0, "y": 6, "w": 6, "h": 4 },
+    { "i": "44444444-4444-4444-8444-444444444444", "x": 6, "y": 6, "w": 6, "h": 4 }
+  ],
+  "variables": {},
+  "version": "v4"
+}

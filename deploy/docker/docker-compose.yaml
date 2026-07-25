@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  argus-frontend:
+    image: argus-frontend:latest
+    build:
+      context: ./frontend
+    ports:
+      - "3301:3301"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    depends_on:
+      - argus-query-service
+
+  argus-query-service:
+    image: argus-query-service:latest
+    build:
+      context: ./pkg/query-service
+    ports:
+      - "8080:8080"
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=9000
+    depends_on:
+      - clickhouse
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+volumes:
+  clickhouse_data:

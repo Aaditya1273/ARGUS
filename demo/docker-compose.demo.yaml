@@ -1,0 +1,231 @@
+# ARGUS Complete Demo Environment
+# One command: docker compose -f docker-compose.demo.yaml up -d
+# This starts the entire ARGUS stack with a live AI demo agent.
+
+services:
+  # ============================================================
+  # Data Layer
+  # ============================================================
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    hostname: clickhouse
+    container_name: argus-clickhouse
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./seed/clickhouse:/docker-entrypoint-initdb.d:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    hostname: postgres
+    container_name: argus-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: argus
+      POSTGRES_PASSWORD: argus
+      POSTGRES_DB: argus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    hostname: redis
+    container_name: argus-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================
+  # Telemetry Pipeline
+  # ============================================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.94.0
+    hostname: otel-collector
+    container_name: argus-otel-collector
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics
+      - "8889:8889"   # Prometheus exporter
+    volumes:
+      - ./otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  # ============================================================
+  # ARGUS Control Plane
+  # ============================================================
+  argus-query-service:
+    build:
+      context: ../
+      dockerfile: cmd/argus-server/Dockerfile
+    hostname: query-service
+    container_name: argus-query-service
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      ARGUS_DEMO_MODE: "true"
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  argus-frontend:
+    build:
+      context: ../frontend
+    hostname: frontend
+    container_name: argus-frontend
+    ports:
+      - "3301:3301"
+    environment:
+      REACT_APP_API_URL: http://localhost:8080
+    depends_on:
+      argus-query-service:
+        condition: service_healthy
+
+  # ============================================================
+  # Demo AI Agent
+  # ============================================================
+  demo-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    hostname: demo-agent
+    container_name: argus-demo-agent
+    depends_on:
+      argus-query-service:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      seed:
+        condition: service_completed_successfully
+    environment:
+      ARGUS_WS_ENDPOINT: ws://argus-query-service:8080
+      ARGUS_AGENT_ID: demo-sales-agent
+      ARGUS_API_KEY: demo-key
+      ARGUS_OTLP_ENDPOINT: http://otel-collector:4317
+      ARGUS_BUDGET_LIMIT: "10.0"
+      ARGUS_DEBUG: "true"
+      ARGUS_SAMPLE_RATE: "1.0"
+      ARGUS_SERVICE_NAME: demo-sales-agent
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-demo}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-3.5-turbo}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    restart: "no"
+    profiles:
+      - demo
+
+  # ============================================================
+  # Monitoring Dashboard
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    hostname: prometheus
+    container_name: argus-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - otel-collector
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    hostname: grafana
+    container_name: argus-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dashboard/argus-dashboard.json:/var/lib/grafana/dashboards/argus.json:ro
+      - ./dashboard/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./dashboard/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    depends_on:
+      - prometheus
+
+  # ============================================================
+  # Seed Runner — imports dashboards and alerts into SigNoz
+  # ============================================================
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    hostname: seed
+    container_name: argus-seed
+    command: ["python", "/app/demo/seed.py"]
+    environment:
+      ARGUS_API_URL: http://argus-query-service:8080
+    depends_on:
+      argus-query-service:
+        condition: service_healthy
+    profiles:
+      - seed
+
+  # ============================================================
+  # Verification Runner
+  # ============================================================
+  verify:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    hostname: verify
+    container_name: argus-verify
+    command: ["python", "/app/demo/verify.py"]
+    environment:
+      ARGUS_API_URL: http://argus-query-service:8080
+      ARGUS_WS_ENDPOINT: ws://argus-query-service:8080
+    depends_on:
+      argus-query-service:
+        condition: service_healthy
+    profiles:
+      - verify
+
+volumes:
+  clickhouse_data:
+  postgres_data:
+  prometheus_data:
+  grafana_data:

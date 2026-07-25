@@ -1,1 +1,0 @@
-# Seva Memory Plugin

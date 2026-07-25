@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  argus-control-plane:
+    image: argus/control-plane:v1.0.0
+    container_name: argus-control-plane
+    restart: always
+    ports:
+      - "8080:8080" # REST API & WebSockets
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    environment:
+      - ARGUS_ENV=production
+      - ARGUS_REDIS_URL=redis://argus-redis:6379
+      - ARGUS_LOG_LEVEL=info
+    depends_on:
+      - argus-redis
+
+  argus-redis:
+    image: redis:7-alpine
+    container_name: argus-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - argus_redis_data:/data
+    command: redis-server --appendonly yes
+
+  argus-frontend:
+    image: argus/frontend:v1.0.0
+    container_name: argus-frontend
+    restart: always
+    ports:
+      - "3301:3301"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://argus-control-plane:8080/api/v1
+
+volumes:
+  argus_redis_data:
