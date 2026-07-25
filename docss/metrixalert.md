@@ -1,0 +1,260 @@
+# Metrics based alerts
+
+Tags: SigNoz Cloud, Self-Host
+
+Tag definitions:
+- SigNoz Cloud: This page applies to SigNoz Cloud editions.
+- Self-Host: This page applies to self-hosted SigNoz editions.
+
+A Metric-based alert in SigNoz allows you to define conditions based on metric data and trigger alerts when these conditions are met. You can define your metric query using **Query Builder**, **ClickHouse queries**, or **PromQL**.
+
+This page covers the configuration options available for Metric-based alerts — from defining the metric query to setting conditions and notification preferences.
+
+At the top of the alert creation page, you can set:
+
+- **Alert Name**: A field to name the alert for easy identification.
+- **Labels**: Add static labels or tags for categorization. Labels should be added in key-value pairs. First enter key (avoid space in key) and set value.
+
+![Alert name and labels at the top of the alert creation page](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alert-name-labels.webp)
+
+*Set alert name and labels*
+
+## Step 1: Define the Metric
+
+In this step, you use the [Metrics Query Builder](/docs-onboarding/userguide/query-builder-v5/?region=in2) to choose the metric to monitor. The following fields are available:
+
+- **Metric**: Select the specific metric you want to monitor (e.g., `k8s.pod.memory_request_utilization`, `system.cpu.utilization`).
+
+- **Filter**: Write a filter expression to narrow the data (e.g., `service.name = 'frontend'`). Supports logical operators like AND, OR, IN, NOT IN.
+
+- **Aggregate within time series**: Select the time aggregation function (Avg, Sum, Min, Max, Count, Rate, etc.) and the step interval. Learn more about [time aggregation](/docs-onboarding/metrics-management/types-and-aggregation/#aggregation?region=in2).
+
+- **Aggregate across time series**: Select the space aggregation function and optional group-by dimensions. Learn more about [space aggregation](/docs-onboarding/metrics-management/types-and-aggregation/#aggregation?region=in2).
+
+- **[Legend Format](/docs-onboarding/userguide/query-builder-v5/#legend-format?region=in2)**: Customize the legend's format in the visual representation of the alert.
+
+- **Having**: Apply conditions to filter the results further based on aggregate value.
+
+![Using Query Builder to the metric to monitor](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alerts-metrics-based-1.webp)
+
+*Using Query Builder to define the metric to monitor*
+
+To know more about the functionalities of the Query Builder, checkout the [documentation](/docs-onboarding/userguide/query-builder-v5/?region=in2).
+
+## Step 2: Define Alert Conditions
+
+In this step, you define the specific conditions for triggering the alert, as well as the frequency of checking those conditions. The condition configuration of an alert in SigNoz consists of 5 core parts:
+
+### Query
+
+An alert can consist of multiple queries and formulas. But only 1 of them can be put into consideration while determining the alert condition.
+
+You can define one or more queries or formulas to fetch the data you want to evaluate. However, only one of them can be used as the trigger for the alert condition.
+
+For example:
+
+- `A` = Total request count
+- `B` = Total error count
+- `C` = `B / A` (Error rate)
+
+You can use query `C` as the evaluation target to trigger alerts based on error rate.
+
+### Condition
+
+This defines the logical condition to check against the selected query’s value.
+
+| Operator       | Description                            | Example Usage                    |
+| -------------- | -------------------------------------- | -------------------------------- |
+| `Above`        | Triggers if the value is greater than  | CPU usage `Above 90` (%)         |
+| `Below`        | Triggers if the value is less than     | Apdex score `Below 0.8`          |
+| `Equal to`     | Triggers if the value is exactly equal | Request count `Equal to 0`       |
+| `Not equal to` | Triggers if the value is not equal     | Instance status `Not Equal to 1` |
+
+### Match Type
+
+Specifies how the condition must hold over the evaluation window. This allows for flexible evaluation logic.
+
+| Match Type      | Description                                                   | Example Use Case                         |
+| --------------- | ------------------------------------------------------------- | ---------------------------------------- |
+| `at least once` | Trigger if condition matches even once in the window          | Detect spikes or brief failures          |
+| `all the times` | Trigger only if condition matches at all points in the window | Ensure stable violations before alerting |
+| `on average`    | Evaluate the **average** value in the window                  | Average latency `Above 500ms`            |
+| `in total`      | Evaluate the total sum over the window                        | Total errors `Above 100`                 |
+| `last`          | Only the last data point is evaluated                         | Used when only latest status matters     |
+
+### Evaluation Window
+
+Specifies the time window and mode for evaluating the condition. You can choose between two modes:
+
+- **Rolling**: Monitors data over a fixed time period that moves forward continuously. For example, a 5-minute rolling window with 1-minute evaluation cadence checks continuously: 14:01:00–14:06:00, 14:02:00–14:07:00, etc.
+- **Cumulative**: Monitors data accumulated since a fixed starting point. The window grows over time, keeping all historical data from the start. For example, an hourly cumulative window for error count alerts when errors exceed 100 — starting at the top of the hour, it tracks: 20 errors by :15, 55 by :30, 105 by :45 (alert fires).
+
+Both modes support preset timeframes (Last 5 minutes, Last 10 minutes, Last 15 minutes, Last 30 minutes, Last 1 hour, Last 2 hours, Last 4 hours) as well as a **Custom** time range for specific requirements.
+
+![Evaluation window options showing Rolling and Cumulative modes](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/evaluation-window-rolling.webp)
+
+*Evaluation window with Rolling and Cumulative options*
+
+### Notification Channels
+
+Choose the [notification channels](/docs-onboarding/alerts-management/notification-channel/slack/?region=in2) to send alerts to from those configured in Settings > Account Settings > Notification Channels. You can select multiple channels per threshold.
+
+### Threshold
+
+This is the value you are comparing the query result against.
+
+e.g. If you choose `Condition = Above` and set `Threshold = 500`, the alert will fire when the query result exceeds 500.
+
+### Threshold Unit
+
+Specifies the unit of the threshold, such as:
+
+- ms (milliseconds) for latency
+- % for CPU usage
+- Count for request totals
+
+Helps interpret the threshold in the correct context and also for correct scaling while comparing 2 values.
+
+### Advanced Options
+
+Under the **Advanced Options** section, you can configure:
+
+- **How often to check**: How frequently SigNoz evaluates the alert condition. Default is every 1 minute.
+
+- **Alert when data stops coming**: Send a notification if no data is received for a specified time period. Useful for services where consistent data is expected.
+
+### Minimum Data Points in Result Group
+
+- Ensures the alert condition is evaluated only when there's enough data for statistical significance.
+- Helps avoid false alerts due to missing or sparse data points.
+- When the number of data points in the evaluation window is below this minimum, the alert evaluation is skipped and the alert transitions to the **resolved** state. If the data point count fluctuates around the configured minimum, this can cause repeated resolve → fire cycles (alert flapping).
+- To avoid flapping, set this value with some margin below the number of data points you expect in the evaluation window. For example, if your collection interval is 1 minute and your evaluation window is 5 minutes, you expect \~5 data points — set the minimum to `3` rather than `5` so the query must return at least 3 data points for the alert to be evaluated.
+
+![Set alert conditions with threshold, routing policies, and advanced options](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alerts-metrics-based-2.webp)
+
+*Set alert conditions*
+
+## Step 3: Notification Settings
+
+In this step, you configure how alert notifications are delivered:
+
+### Notification Message
+
+Custom message content for alert notifications. Use template variables to include dynamic information. The default template includes the current value and threshold.
+
+You can incorporate result attributes in the alert message to make notifications more informative:
+
+**Syntax**: Use `$<attribute-name>` to insert attribute values. Attribute values can be any attribute used in group by.
+
+**Example**: If you have a query that has the attribute `service.name` in the group by clause then to use it in the notification message, you will use `$service.name`.
+
+Using [advanced Slack formatting](https://api.slack.com/reference/surfaces/formatting#advanced) is supported if you are using Slack as a notification channel.
+
+### Group alerts by
+
+Combine alerts with the same field values into a single notification. Select fields to group by (optional). When empty, all matching alerts are combined into one notification.
+
+### Repeat Notifications
+
+Configure repeat notifications to retrigger alerts at specified intervals if they remain unresolved. To enable:
+
+1. Scroll to the bottom of the alert configuration
+
+2. Enable the **Repeat Notification** toggle
+
+3. Set your desired interval
+
+4. Configure the condition:
+
+   - **Firing**: Send repeat notifications when the alert is actively firing
+   - **No Data**: Send repeat notifications when no data is received
+
+![Repeat Notification configuration showing interval and condition options](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/repeat-notification.webp)
+
+*Repeat Notification configuration*
+
+### Test Notification
+
+Click the **Test Notification** button at the bottom of the page to send a test alert to the configured notification channels. This verifies that your alert pipeline is working correctly before saving.
+
+![Notification settings for the alert](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alerts-metrics-based-3.webp)
+
+*Notification settings*
+
+## Examples
+
+### 1. Alert when memory usage for host goes above 400 MB (or any fixed memory)
+
+#### Here's a video tutorial for creating this alert:
+
+[YouTube Video Player](https://www.youtube.com/embed/xjxNIqiv4_M)
+
+#### Step 1: Write Query Builder query to define alert metric
+
+![metrics builder query for memory usage](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/mem-usage-alert-builder.webp)
+
+*Memory usage metric builder query*
+
+The [hostmetricsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver) creates several host system metrics, including [system\_memory\_usage](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/hostmetricsreceiver/internal/scraper/memoryscraper/documentation.md#systemmemoryusage), which contains the memory usage for each [state](https://www.kernel.org/doc/Documentation/filesystems/proc.txt) from `/proc/meminfo`. The states can be `free`, `used`, `cached`, etc. We want to alert when the total memory usage of a host exceeds the threshold, so the filter expression excludes the `free` state with `state!= 'free'`. We calculate the average value within each time series and then sum across time series grouped by `host.name` to get the per-host memory usage.
+
+**Info**
+
+Remember to set the unit of the `y-axis` to bytes, as that is the unit of the mentioned metric.
+
+#### Step 2: Set alert conditions
+
+![metrics builder query for memory usage](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/mem-usage-alert-builder-condition.webp)
+
+*Memory usage alert condition*
+
+The condition is set to trigger a notification if the per-minute memory usage exceeds the threshold of 400 MB at least once in the last five minutes.
+
+### 2. Alert when memory usage for host goes above 70%
+
+You might want to alert based on the percentage rather than a fixed threshold. There are two ways to get the percentage: the convenient option is when the usage percentage is reported directly by the source, or when the source only sends the exact usage in bytes and you need to derive the percentage yourself. This example demonstrates how to derive the percentage from the original bytes metric.
+
+![metrics builder query for memory usage](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/mem-usage-alert-percentage-builder.webp)
+
+*Memory usage percentage query*
+
+We use a formula to derive the percentage value from the exact memory usage in bytes. In the example, query `A` calculates the per-host memory usage (with the `state!= 'free'` filter), while query `B` has no filter expression, thus providing the total memory available. The formula `A/B` is interpreted as (memory usage in bytes) / (total memory available in bytes). We set the unit of the y-axis to Percent (0.0 - 1.0) to match the result of the formula.
+
+![metrics builder query for memory usage](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/mem-usage-alert-percentage-builder-condition.webp)
+
+*Memory usage percentage condition*
+
+The condition is set to trigger a notification if the per-minute memory usage exceeds the threshold of 70% all the times in the last five minutes.
+
+### 3. Alert when the error percentage for an endpoint exceeds 5%
+
+SigNoz creates a metric `signoz_calls_total` from the trace data. The default attributes of the metric are `service_name`, `operation`, `span_kind`, `status_code`, and `http_status_code`. There is no separate metric for counting errors; instead, the `status_code` attribute is used to determine if a request counts as an error. This example demonstrates how to calculate the error percentage and alert on it.
+
+![metrics builder query for error percentage](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/error-percentage-builder.webp)
+
+*Error percentage query*
+
+We use a formula to derive the error percentage from the total calls metric. In the example, query `A` filters for error status codes and `SPAN_KIND_SERVER` spans to calculate the per-endpoint error rate, while query `B` filters only for `SPAN_KIND_SERVER` without a status code filter, providing the per-endpoint total request rate. The formula `A/B` gives the error percentage per endpoint. We set the unit of the y-axis to Percent (0.0 - 1.0) to match the result of the formula.
+
+![metrics builder query for error percentage](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/error-percentage-builder-condition.webp)
+
+*Error percentage condition*
+
+The condition is set to trigger a notification if the per-minute error percentage exceeds the threshold of 5% all the times in the last five minutes.
+
+### 4. Alert when P95 latency for an endpoint is above 1200 ms
+
+SigNoz creates a metric `signoz_latency_bucket` from the trace data. The default attributes of the metric are `service_name`, `operation`, `span_kind`, `status_code`, and `http_status_code`. This example demonstrates how to calculate the P95 latency for an endpoint and alert on it.
+
+![metrics builder query for latency](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/p95-latency-builder.webp)
+
+*Endpoint latency query*
+
+We use the P95 aggregation, which gives the 95th-percentile request latency per endpoint. We set the unit of the y-axis to milliseconds to match the unit of the metric.
+
+![metrics builder query for latency](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/metrics/p95-latency-builder-condition.webp)
+
+*Endpoint latency condition*
+
+The condition is set to trigger a notification if the per-minute P95 latency exceeds the threshold of 1200 ms at any time in the last five minutes.
+
+More docs: /docs/sitemap.md

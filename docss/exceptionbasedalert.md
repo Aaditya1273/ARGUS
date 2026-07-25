@@ -1,0 +1,181 @@
+# Exceptions based alerts
+
+Tags: SigNoz Cloud, Self-Host
+
+Tag definitions:
+- SigNoz Cloud: This page applies to SigNoz Cloud editions.
+- Self-Host: This page applies to self-hosted SigNoz editions.
+
+An Exceptions-based alert in SigNoz allows you to define conditions based on exception data, triggering alerts when these conditions are met. You can define your exception query using **Query Builder** or **ClickHouse queries**.
+
+This page covers the configuration options available for Exceptions-based alerts — from defining the exception query to setting conditions and notification preferences.
+
+At the top of the alert creation page, you can set:
+
+- **Alert Name**: A field to name the alert for easy identification.
+- **Labels**: Add static labels or tags for categorization. Labels should be added in key-value pairs. First enter key (avoid space in key) and set value.
+
+## Step 1: Define the Metric Using ClickHouse Query
+
+In this step, you define the ClickHouse query to retrieve the exception data and set conditions for triggering the alert. For help writing ClickHouse queries, see [Writing ClickHouse Traces Queries](/docs-onboarding/userguide/writing-clickhouse-traces-query/#dashboard-panel-examples?region=in2). The following elements are available:
+
+- **ClickHouse Query**: A field to write a ClickHouse SQL query that selects and aggregates exception data. The query should define the exception type, time range, and other necessary conditions.
+
+- **[Legend Format](/docs-onboarding/userguide/query-builder-v5/#legend-format?region=in2)**: An optional field to define the format for the legend in the visual representation of the alert.
+
+![Using ClickHouse Query to define metrics](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alerts-exceptions-based-1.webp)
+
+*Using ClickHouse Query to define metrics*
+
+## Step 2: Define Alert Conditions
+
+In this step, you define the specific conditions for triggering the alert, as well as the frequency of checking those conditions. The condition configuration of an alert in SigNoz consists of these core parts:
+
+### Query
+
+The ClickHouse query you defined in Step 1 returns the values that the alert condition evaluates. Ensure your query returns a `value` column and an `interval` column for time-series evaluation.
+
+### Condition
+
+This defines the logical condition to check against the query result.
+
+| Operator       | Description                            | Example Usage                    |
+| -------------- | -------------------------------------- | -------------------------------- |
+| `Above`        | Triggers if the value is greater than  | Exception count `Above 10`       |
+| `Below`        | Triggers if the value is less than     | Exception count `Below 1`        |
+| `Equal to`     | Triggers if the value is exactly equal | Exception count `Equal to 0`     |
+| `Not equal to` | Triggers if the value is not equal     | Exception count `Not Equal to 0` |
+
+### Match Type
+
+Specifies how the condition must hold over the evaluation window. This allows for flexible evaluation logic.
+
+| Match Type      | Description                                                   | Example Use Case                         |
+| --------------- | ------------------------------------------------------------- | ---------------------------------------- |
+| `at least once` | Trigger if condition matches even once in the window          | Detect spikes or brief failures          |
+| `all the times` | Trigger only if condition matches at all points in the window | Ensure stable violations before alerting |
+| `on average`    | Evaluate the **average** value in the window                  | Average latency `Above 500ms`            |
+| `in total`      | Evaluate the total sum over the window                        | Total errors `Above 100`                 |
+| `last`          | Only the last data point is evaluated                         | Used when only latest status matters     |
+
+### Evaluation Window
+
+Specifies the time window and mode for evaluating the condition. You can choose between two modes:
+
+- **Rolling**: Monitors data over a fixed time period that moves forward continuously. For example, a 5-minute rolling window with 1-minute evaluation cadence checks continuously: 14:01:00–14:06:00, 14:02:00–14:07:00, etc.
+- **Cumulative**: Monitors data accumulated since a fixed starting point. The window grows over time, keeping all historical data from the start. For example, an hourly cumulative window for error count alerts when errors exceed 100 — starting at the top of the hour, it tracks: 20 errors by :15, 55 by :30, 105 by :45 (alert fires).
+
+Both modes support preset timeframes (Last 5 minutes, Last 10 minutes, Last 15 minutes, Last 30 minutes, Last 1 hour, Last 2 hours, Last 4 hours) as well as a **Custom** time range for specific requirements.
+
+### Threshold
+
+This is the value you are comparing the query result against.
+
+e.g. If you choose `Condition = Above` and set `Threshold = 500`, the alert will fire when the query result exceeds 500.
+
+### Threshold Unit
+
+Specifies the unit of the threshold, such as:
+
+- ms (milliseconds) for latency
+- % for CPU usage
+- Count for request totals
+
+Helps interpret the threshold in the correct context and also for correct scaling while comparing 2 values.
+
+### Notification Channels
+
+Choose the [notification channels](/docs-onboarding/alerts-management/notification-channel/slack/?region=in2) to send alerts to from those configured in Settings > Account Settings > Notification Channels. You can select multiple channels per threshold.
+
+### Advanced Options
+
+Under the **Advanced Options** section, you can configure:
+
+- **How often to check**: How frequently SigNoz evaluates the alert condition. Default is every 1 minute.
+
+- **Alert when data stops coming**: Send a notification if no data is received for a specified time period. Useful for services where consistent data is expected.
+
+- **Minimum data required**: Only trigger the alert when there are enough data points to make a reliable decision. Helps avoid false alerts due to missing or sparse data.
+
+![Set alert conditions](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alerts-exceptions-based-2.webp)
+
+*Set alert conditions*
+
+## Step 3: Notification Settings
+
+In this step, you configure how alert notifications are delivered:
+
+### Notification Message
+
+Custom message content for alert notifications. Use template variables to include dynamic information. The default template includes the current value and threshold.
+
+You can incorporate result attributes in the alert message to make notifications more informative:
+
+**Syntax**: Use `$<attribute-name>` to insert attribute values. Attribute values can be any attribute used in group by.
+
+**Example**: If you have a query that has the attribute `service.name` in the group by clause then to use it in the notification message, you will use `$service.name`.
+
+Using [advanced Slack formatting](https://api.slack.com/reference/surfaces/formatting#advanced) is supported if you are using Slack as a notification channel.
+
+### Group alerts by
+
+Combine alerts with the same field values into a single notification. Select fields to group by (optional). When empty, all matching alerts are combined into one notification.
+
+### Repeat Notifications
+
+Configure repeat notifications to retrigger alerts at specified intervals if they remain unresolved. To enable:
+
+1. Scroll to the bottom of the alert configuration
+
+2. Enable the **Repeat Notification** toggle
+
+3. Set your desired interval
+
+4. Configure the condition:
+
+   - **Firing**: Send repeat notifications when the alert is actively firing
+   - **No Data**: Send repeat notifications when no data is received
+
+![Repeat Notification configuration showing interval and condition options](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/repeat-notification.webp)
+
+*Repeat Notification configuration*
+
+### Test Notification
+
+Click the **Test Notification** button at the bottom of the page to send a test alert to the configured notification channels. This verifies that your alert pipeline is working correctly before saving.
+
+![Notification settings for the alert](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/alerts/alerts-exceptions-based-3.webp)
+
+*Notification settings*
+
+## Examples
+
+### 1. Alert when exception of type `ConnectionError` occurs
+
+#### Here's a video tutorial for creating this alert:
+
+[YouTube Video Player](https://www.youtube.com/embed/YWaIfNqNlgc)
+
+- **ClickHouse Query**: Counts occurrences of 'ConnectionError' exceptions within one-minute intervals, grouped by service name. The ClickHouse Query would look like:
+
+```tsx
+    SELECT
+        count() as value,
+        toStartOfInterval(timestamp, toIntervalMinute(1)) AS interval,
+        serviceName
+    FROM signoz_traces.distributed_signoz_error_index_v2
+    WHERE exceptionType !='ConnectionError'
+    AND timestamp BETWEEN {{.start_datetime}} AND {{.end_datetime}}
+    GROUP BY serviceName, interval;
+```
+
+- **Alert Threshold**: Set to **0**
+- **Alert Name**: "Exceptions Alert"
+- **Severity**: "Warning"
+- **Notification Channels**: signoz-slack-alerts (Slack channel)
+
+![A gif of Exceptions Based alerts example in SigNoz](https://d3nu8xzr1i9u95.cloudfront.net/web/img/docs/product-features/alerts/alerts-exceptions-based.gif)
+
+*Exceptions Based Alert Example*
+
+More docs: /docs/sitemap.md
