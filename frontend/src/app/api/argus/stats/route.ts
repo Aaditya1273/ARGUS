@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 // The URL of the Go backend running on port 8080
-const BACKEND_URL = 'https://argus-production-0c2d.up.railway.app/api/v1/argus/stats'
+const BACKEND_URL = 'https://argus-production-d368.up.railway.app/api/v1/argus/stats'
 
 export async function GET() {
   try {

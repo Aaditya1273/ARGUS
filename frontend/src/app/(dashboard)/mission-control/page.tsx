@@ -41,7 +41,7 @@ export default function MissionControlPage() {
     const poll = setInterval(() => { fetchAgents(); fetchStats() }, 5000)
     let retry = 1000, socket: WebSocket
     const connect = () => {
-      socket = new WebSocket('wss://argus-production-0c2d.up.railway.app/api/v1/argus/ws')
+      socket = new WebSocket('wss://argus-production-d368.up.railway.app/api/v1/argus/ws')
       socket.onopen  = () => { setWs(true); retry = 1000 }
       socket.onclose = () => { setWs(false); setTimeout(connect, retry); retry = Math.min(retry * 2, 30000) }
       socket.onmessage = (e) => {

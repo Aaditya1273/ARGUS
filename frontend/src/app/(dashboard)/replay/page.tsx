@@ -20,9 +20,9 @@ export default function ReplayPage() {
     if (!traceId.trim()) { setErr('Trace ID required'); return }
     setLoading(true); setErr(null); setResult(null)
     try {
-      const tr = await fetch(`https://argus-production-0c2d.up.railway.app/api/v1/argus/replay/${encodeURIComponent(traceId)}`)
+      const tr = await fetch(`https://argus-production-d368.up.railway.app/api/v1/argus/replay/${encodeURIComponent(traceId)}`)
       if (!tr.ok) { setErr('Trace not found. Run a session first.'); return }
-      const ex = await fetch('https://argus-production-0c2d.up.railway.app/api/v1/argus/replay/execute', {
+      const ex = await fetch('https://argus-production-d368.up.railway.app/api/v1/argus/replay/execute', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trace_id: traceId, new_prompt: prompt, model }),
       })

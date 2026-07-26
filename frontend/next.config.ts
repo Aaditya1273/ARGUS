@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const BACKEND = "https://argus-production-0c2d.up.railway.app";
+const BACKEND = "https://argus-production-d368.up.railway.app";
 
 const nextConfig: NextConfig = {
   async rewrites() {
