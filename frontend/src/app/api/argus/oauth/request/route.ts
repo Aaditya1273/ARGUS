@@ -4,7 +4,7 @@ export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   try {
-    const res = await fetch(`https://argus-production-d368.up.railway.app/api/v1/argus/oauth/request?id=${encodeURIComponent(id)}`, {
+    const res = await fetch(`https://argus-xhgx.onrender.com/api/v1/argus/oauth/request?id=${encodeURIComponent(id)}`, {
       cache: 'no-store',
     })
     const data = await res.json()
