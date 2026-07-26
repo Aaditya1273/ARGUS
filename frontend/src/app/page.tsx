@@ -192,7 +192,7 @@ function HeroSection() {
         </div>
 
         {/* Bottom Trust Badges (Normal Document Flow) - exactly 80px below CTAs */}
-        <div className="w-[78%] max-w-[1200px] mx-auto mt-[80px] hidden md:flex items-center justify-between px-10 h-[64px] rounded-[20px] bg-gray-900/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] text-white">
+        <div className="w-[78%] max-w-[1200px] mx-auto mt-[80px] hidden md:flex items-center justify-between px-10 h-[64px] rounded-[20px] bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] text-gray-800">
           <span className="flex items-center gap-2.5 text-[14px] font-medium"><Shield className="w-4 h-4 text-[#FF6B00]" /> 99.99% Uptime SLA</span>
           <span className="flex items-center gap-2.5 text-[14px] font-medium"><Lock className="w-4 h-4 text-[#FF6B00]" /> SOC 2 Compliant</span>
           <span className="flex items-center gap-2.5 text-[14px] font-medium"><Globe className="w-4 h-4 text-[#FF6B00]" /> Deploy Anywhere</span>
