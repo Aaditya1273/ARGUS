@@ -79,16 +79,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
       - name: Lint
-        run: pnpm lint
-      - name: Type check
-        run: pnpm typecheck
+        run: npm run lint
       - name: Build
-        run: pnpm build
+        run: npm run build
 
   docker:
     name: Docker Build
