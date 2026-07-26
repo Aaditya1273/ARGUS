@@ -5,7 +5,7 @@ import React, {
 } from 'react'
 import Link from 'next/link'
 import {
-  Shield, ArrowRight, Play, ChevronDown,
+  Activity, ArrowRight, Play, ChevronDown,
   Lock, Globe, Github, CheckCircle, XCircle,
   Zap, Scale, Cpu, BookOpen,
   Building2, Users, FileText, BarChart3,
@@ -20,6 +20,8 @@ import {
   MotionNavigationMenuTrigger,
 } from '@/components/ui/motion-navigation-menu'
 import { Caveat } from 'next/font/google'
+import { motion } from 'framer-motion'
+import { WordsPullUp } from '@/components/ui/words-pull-up'
 
 const caveat = Caveat({ subsets: ['latin'], weight: '400' })
 
@@ -77,7 +79,7 @@ const integrations = [
 
 /* ─── Navigation (curved + floating + mega menu) ─── */
 const PRODUCT_ITEMS = [
-  { title: 'Runtime Governance', desc: 'Monitor and enforce policies on every tool call.', icon: Shield },
+  { title: 'Runtime Governance', desc: 'Monitor and enforce policies on every tool call.', icon: Activity },
   { title: 'Cost Firewall', desc: 'Real-time budget tracking and circuit breakers.', icon: BarChart3 },
   { title: 'Mission Control', desc: 'Agent lifecycle management and live control.', icon: Terminal },
   { title: 'Agent DNA', desc: 'Behavioral fingerprinting and anomaly detection.', icon: Search },
@@ -118,7 +120,7 @@ function Navigation() {
         <div className="h-14 flex items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-3 group z-20">
             <img src="/LOGO.png" alt="ARGUS Logo" className="h-7 w-auto transition-transform duration-300 group-hover:scale-105" />
-            <span className="text-sm font-bold tracking-tight">ARGUS</span>
+            <span className={`text-sm font-bold tracking-tight transition-colors ${scrolled || menuValue ? 'text-black' : 'text-white'}`}>ARGUS</span>
           </Link>
 
           {/* Mega Menu — centered */}
@@ -136,7 +138,7 @@ function Navigation() {
               <MotionNavigationMenuList className="gap-0">
                 {/* Product menu */}
                 <MotionNavigationMenuItem value="product">
-                  <MotionNavigationMenuTrigger className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5 data-[state=open]:text-black">
+                  <MotionNavigationMenuTrigger className={`text-sm transition-colors px-3 py-1.5 ${scrolled || menuValue ? 'text-gray-600 hover:text-black data-[state=open]:text-black' : 'text-gray-300 hover:text-white data-[state=open]:text-white'}`}>
                     Product
                   </MotionNavigationMenuTrigger>
                   <MotionNavigationMenuContent innerClassName="" className="!p-0">
@@ -146,7 +148,7 @@ function Navigation() {
                         className="bg-white hover:bg-orange-light rounded-xl min-h-[120px] justify-between p-4 border border-gray-100"
                       >
                         <span className="bg-white flex size-9 items-center justify-center rounded-lg border border-gray-200">
-                          <Shield className="size-4 text-orange-600" />
+                          <Activity className="size-4 text-orange-600" />
                         </span>
                         <span className="space-y-1">
                           <span className="block text-sm font-semibold text-gray-900">
@@ -179,7 +181,7 @@ function Navigation() {
 
                 {/* Solutions menu */}
                 <MotionNavigationMenuItem value="solutions">
-                  <MotionNavigationMenuTrigger className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5 data-[state=open]:text-black">
+                  <MotionNavigationMenuTrigger className={`text-sm transition-colors px-3 py-1.5 ${scrolled || menuValue ? 'text-gray-600 hover:text-black data-[state=open]:text-black' : 'text-gray-300 hover:text-white data-[state=open]:text-white'}`}>
                     Solutions
                   </MotionNavigationMenuTrigger>
                   <MotionNavigationMenuContent innerClassName="" className="!p-0">
@@ -257,7 +259,7 @@ function Navigation() {
                 <MotionNavigationMenuItem>
                   <MotionNavigationMenuLink
                     href="#architecture"
-                    className="flex h-9 items-center px-3 py-1.5 text-sm text-gray-400 hover:text-black transition-colors"
+                    className={`flex h-9 items-center px-3 py-1.5 text-sm transition-colors ${scrolled || menuValue ? 'text-gray-600 hover:text-black' : 'text-gray-300 hover:text-white'}`}
                   >
                     Architecture
                   </MotionNavigationMenuLink>
@@ -265,7 +267,7 @@ function Navigation() {
                 <MotionNavigationMenuItem>
                   <MotionNavigationMenuLink
                     href="#integrations"
-                    className="flex h-9 items-center px-3 py-1.5 text-sm text-gray-400 hover:text-black transition-colors"
+                    className={`flex h-9 items-center px-3 py-1.5 text-sm transition-colors ${scrolled || menuValue ? 'text-gray-600 hover:text-black' : 'text-gray-300 hover:text-white'}`}
                   >
                     Integrations
                   </MotionNavigationMenuLink>
@@ -273,7 +275,7 @@ function Navigation() {
                 <MotionNavigationMenuItem>
                   <MotionNavigationMenuLink
                     href="#security"
-                    className="flex h-9 items-center px-3 py-1.5 text-sm text-gray-400 hover:text-black transition-colors"
+                    className={`flex h-9 items-center px-3 py-1.5 text-sm transition-colors ${scrolled || menuValue ? 'text-gray-600 hover:text-black' : 'text-gray-300 hover:text-white'}`}
                   >
                     Security
                   </MotionNavigationMenuLink>
@@ -284,7 +286,7 @@ function Navigation() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-3 z-20">
-            <Link href="/login" className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5">Sign In</Link>
+            <Link href="/login" className={`text-sm transition-colors px-3 py-1.5 ${scrolled || menuValue ? 'text-gray-600 hover:text-black' : 'text-gray-300 hover:text-white'}`}>Sign In</Link>
             <Link href="/login" className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg bg-[#FF6B00] text-white hover:bg-[#CC5500] transition-all duration-300">
               Deploy ARGUS <ArrowRight className="w-3 h-3" />
             </Link>
@@ -311,82 +313,63 @@ function SectionHeader({ label, title, desc, centered = false }: { label: string
 
 function HeroSection() {
   return (
-    <section className="relative min-h-[90vh] flex flex-col justify-center pt-[120px] pb-[80px] overflow-hidden bg-[#fafafa]">
-      
-      {/* Background Mountain — 100% opacity, integrated via haze and gradients */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <img src="/bg-mountain.png" alt="Mountains" className="w-full h-full object-cover object-right opacity-100 saturate-[0.45] contrast-[0.85] mix-blend-multiply" />
+    <section className="h-screen w-full relative">
+      <div className="relative h-full w-full overflow-hidden">
         
-        {/* Atmospheric white gradients and soft haze */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#fafafa] via-[#fafafa]/85 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#fafafa] via-transparent to-transparent opacity-90" />
-        <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
-      </div>
-      
-      {/* Background Lines — eye-guides behind headline */}
-      <div className="absolute top-0 right-0 w-[65%] h-[80%] pointer-events-none z-[1] opacity-30">
-        <img src="/bg-lines.png" alt="Lines" className="w-full h-full object-contain object-right-top" />
-      </div>
+        {/* Background video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4"
+        />
 
-      <div className="relative z-10 w-full max-w-[1680px] mx-auto px-[5vw] lg:px-[80px]">
-        
-        {/* Main Grid: Left 44%, Right 56% */}
-        <div className="grid grid-cols-1 md:grid-cols-[44%_56%] w-full items-center">
-          
-          {/* Left Content */}
-          <div className="flex flex-col relative z-20">
-            {/* Status badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-white/60 backdrop-blur-sm text-[11px] font-mono text-gray-700 w-fit mb-[48px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse-dot" />
-              v1.0.0 — Runtime Control Plane
-            </div>
+        {/* Noise overlay */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay bg-noise" />
 
-            {/* Headline - Max width 520px, 900 weight, tight tracking, 32px mb */}
-            <h1 className="max-w-[520px] text-[4.5rem] xl:text-[5.5rem] leading-[1.0] font-[900] text-[#0A0A0A] tracking-tighter mb-[32px]">
-              Every AI<br />Tool Call...
+        {/* Gradient overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+
+        {/* Hero content positioned at the absolute bottom */}
+        <div className="absolute bottom-0 left-0 right-0 px-[5vw] lg:px-[80px] pb-10 sm:pb-12 md:pb-16 max-w-[1680px] mx-auto z-10">
+          <div className="flex flex-col w-full gap-4">
+            
+            {/* The Massive Title */}
+            <h1
+              className="font-[900] leading-[0.85] tracking-[-0.07em] text-[26vw] sm:text-[24vw] md:text-[22vw] lg:text-[18vw] xl:text-[18vw]"
+              style={{ color: "#FDFCF8" }}
+            >
+              <WordsPullUp text="ARGUS" showAsterisk />
             </h1>
 
-            {/* Handwritten words */}
-            <div className={`flex flex-col gap-[34px] mb-[40px] pl-[10px] ${caveat.className}`} style={{ transform: 'rotate(-4deg)' }}>
-              <div className="text-[3.8rem] xl:text-[4.5rem] leading-[0.7] text-[#FF6B00]">Observed.</div>
-              <div className="text-[3.8rem] xl:text-[4.5rem] leading-[0.7] text-[#0D1117]">Governed.</div>
-              <div className="text-[3.8rem] xl:text-[4.5rem] leading-[0.7] text-[#FF6B00]">Enforced.</div>
+            {/* Description & Button Stack */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mt-4">
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="max-w-[700px] text-sm sm:text-base md:text-lg text-white/90 font-medium"
+                style={{ lineHeight: 1.4 }}
+              >
+                ARGUS sits invisibly between your AI clients and your infrastructure to govern every single tool call in real-time. Unmatched observability and zero-trust security.
+              </motion.p>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Link href="/login" className="h-[56px] px-8 bg-[#FF6B00] hover:bg-[#CC5500] text-white rounded-lg font-semibold text-[15px] transition-all flex items-center justify-center gap-2 group whitespace-nowrap">
+                  Deploy ARGUS 
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </motion.div>
             </div>
 
-            {/* Subheadline - max-w 560px for improved readability */}
-            <p className="max-w-[560px] text-[16px] text-gray-600 leading-[1.65] font-medium mb-[40px]">
-              ARGUS intercepts every AI tool call before execution, evaluates enterprise policies in milliseconds, and automatically blocks unsafe, expensive, or non-compliant behaviour.
-            </p>
-
-            {/* CTAs - h-56px, gap 16px */}
-            <div className="flex items-center gap-[16px]">
-              <Link href="/login" className="h-[56px] px-8 bg-[#FF6B00] hover:bg-[#CC5500] text-white rounded-lg font-semibold text-[15px] transition-all flex items-center justify-center gap-2">
-                Deploy ARGUS <ArrowRight className="w-4 h-4" />
-              </Link>
-              <a href="#product" className="h-[56px] px-8 bg-transparent hover:bg-gray-50 text-gray-800 rounded-lg font-semibold text-[15px] transition-all border border-gray-300 flex items-center justify-center gap-2">
-                <Play className="w-4 h-4 text-gray-600" /> View Live Runtime
-              </a>
-            </div>
-          </div>
-
-          {/* Right Content - 3D Shield */}
-          <div className="relative h-full flex items-center justify-center pointer-events-none">
-            <img 
-              src="/hero-shield.png" 
-              alt="ARGUS Shield" 
-              className="w-[68%] max-w-[400px] object-contain drop-shadow-2xl transform translate-x-[125px] translate-y-[65px]"
-            />
           </div>
         </div>
-
-        {/* Bottom Trust Badges (Normal Document Flow) - exactly 80px below CTAs */}
-        <div className="w-[78%] max-w-[1200px] mx-auto mt-[80px] hidden md:flex items-center justify-between px-10 h-[64px] rounded-[20px] bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] text-gray-800">
-          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Shield className="w-4 h-4 text-[#FF6B00]" /> 99.99% Uptime SLA</span>
-          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Lock className="w-4 h-4 text-[#FF6B00]" /> SOC 2 Compliant</span>
-          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Globe className="w-4 h-4 text-[#FF6B00]" /> Deploy Anywhere</span>
-          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Github className="w-4 h-4 text-[#FF6B00]" /> Open Source</span>
-        </div>
-
       </div>
     </section>
   )
@@ -561,7 +544,7 @@ function EnterpriseCTA() {
       <div ref={ref} className={`reveal ${v ? 'visible' : ''}`}>
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <div className="w-16 h-16 rounded-2xl bg-black flex items-center justify-center mx-auto">
-            <Shield className="w-8 h-8 text-white" />
+            <Activity className="w-8 h-8 text-white" />
           </div>
           <h2 className="h1 text-black">
             Ready to Govern Your
@@ -600,25 +583,59 @@ function EnterpriseCTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-gray-100 py-10 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <img src="/LOGO.png" alt="ARGUS Logo" className="h-6 w-auto" />
-            <span className="text-xs font-bold tracking-tight">ARGUS</span>
+    <footer className="bg-[#0A0A0A] pt-20 pb-10 px-[5vw] lg:px-[80px] border-t border-gray-800">
+      <div className="max-w-[1680px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
+          {/* Brand Column */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <img src="/LOGO.png" alt="ARGUS Logo" className="h-8 w-auto brightness-0 invert" />
+              <span className="text-lg font-bold tracking-tight text-white">ARGUS</span>
+            </div>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
+              The Enterprise AI Runtime Control Plane. Govern every tool call, block rogue agents, and gain unmatched observability over your AI infrastructure in real-time.
+            </p>
           </div>
-          <div className="flex items-center gap-6 text-xs text-gray-400">
-            <a href="#" className="hover:text-black transition-colors">Documentation</a>
-            <a href="#" className="hover:text-black transition-colors">API Reference</a>
-            <a href="#" className="hover:text-black transition-colors">Privacy</a>
-            <a href="#" className="hover:text-black transition-colors">Terms</a>
-            <a href="https://github.com/SigNoz/signoz" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">
-              GitHub
-            </a>
+
+          {/* Product Column */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-white text-sm font-semibold mb-2">Product</h4>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Runtime Governance</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Cost Firewall</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Mission Control</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Agent DNA</a>
           </div>
-          <p className="text-[10px] text-gray-300">
-            © {new Date().getFullYear()} ARGUS Enterprise. Apache 2.0.
+
+          {/* Developers Column */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-white text-sm font-semibold mb-2">Developers</h4>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Documentation</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">API Reference</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">MCP Protocol</a>
+            <a href="https://github.com/SigNoz/signoz" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors text-sm">GitHub</a>
+          </div>
+
+          {/* Company Column */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-white text-sm font-semibold mb-2">Company</h4>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">About</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Security & Trust</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</a>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-gray-500">
+            © {new Date().getFullYear()} ARGUS Enterprise. All rights reserved.
           </p>
+          <div className="flex items-center gap-6">
+            <span className="flex items-center gap-2 text-sm text-gray-500">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              All systems operational
+            </span>
+          </div>
         </div>
       </div>
     </footer>
@@ -637,7 +654,6 @@ export default function LandingPage() {
       <ArchitectureSection />
       <IntegrationsSection />
       <SecuritySection />
-      <EnterpriseCTA />
       <Footer />
     </div>
   )
