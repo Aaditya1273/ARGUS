@@ -20,7 +20,7 @@ export default function LoginPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-200">
+        <div className="w-14 h-14 rounded-3xl bg-[#FF6B00] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-200/50">
           <Shield className="w-7 h-7 text-white" />
         </div>
         <h2 className="text-2xl font-bold gradient-text tracking-tight">Sign in to ARGUS</h2>
@@ -34,7 +34,7 @@ export default function LoginPage() {
           className="w-full flex justify-center items-center gap-3 py-3.5 px-4 text-sm font-semibold rounded-2xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all duration-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#FF6B00]/20 border-t-[#FF6B00] rounded-full animate-spin" />
           ) : (
             <>
               <svg className="w-5 h-5" viewBox="0 0 24 24">

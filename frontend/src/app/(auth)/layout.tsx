@@ -5,19 +5,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-[#f5f5f7]">
       {/* Left side - Branding */}
       <div className="hidden md:flex flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-white" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-300 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-orange-50/30 to-white" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent" />
         <div 
           className="absolute inset-0 opacity-[0.4]"
           style={{
             backgroundImage: 
-              'linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px)',
+              'linear-gradient(rgba(255,107,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,107,0,0.03) 1px, transparent 1px)',
             backgroundSize: '60px 60px',
           }}
         />
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+            <div className="w-10 h-10 rounded-2xl bg-[#FF6B00] flex items-center justify-center shadow-lg shadow-orange-200">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -46,7 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 { label: 'Behavioral DNA', desc: 'Detect anomalies with behavioral baselines' },
               ].map((f) => (
                 <div key={f.label} className="flex items-center gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
                   <div>
                     <p className="text-sm font-medium text-[#1d1d1f]">{f.label}</p>
                     <p className="text-xs text-gray-400">{f.desc}</p>
@@ -63,8 +63,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
       
       {/* Right side - Forms */}
-      <div className="flex items-center justify-center p-8 relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-to-r from-indigo-100 via-purple-100 to-transparent blur-3xl pointer-events-none" />
+      <div className="flex items-center justify-center p-8 relative overflow-hidden bg-[#0A0A0A]">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img src="/image.png" alt="Background" className="w-full h-full object-cover object-center opacity-80 pointer-events-none" />
+        </div>
+        
         <div className="w-full max-w-md relative z-10">
           <div className="bg-white/80 backdrop-blur-2xl rounded-4xl border border-black/[0.04] shadow-xl p-8">
             {children}
