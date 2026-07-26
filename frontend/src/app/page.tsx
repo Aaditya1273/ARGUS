@@ -1,12 +1,24 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, Fragment } from 'react'
+import React, {
+  useEffect, useRef, useState, useCallback, Fragment
+} from 'react'
 import Link from 'next/link'
 import {
   Shield, ArrowRight, Play, ChevronDown,
   Lock, Globe, Github, CheckCircle, XCircle,
-  Zap, Scale, Cpu,
+  Zap, Scale, Cpu, BookOpen,
+  Building2, Users, FileText, BarChart3,
+  Search, Terminal,
 } from 'lucide-react'
+import {
+  MotionNavigationMenu,
+  MotionNavigationMenuContent,
+  MotionNavigationMenuItem,
+  MotionNavigationMenuLink,
+  MotionNavigationMenuList,
+  MotionNavigationMenuTrigger,
+} from '@/components/ui/motion-navigation-menu'
 import { Caveat } from 'next/font/google'
 
 const caveat = Caveat({ subsets: ['latin'], weight: '400' })
@@ -63,37 +75,215 @@ const integrations = [
    COMPONENTS
    ══════════════════════════════════════════════════════════════ */
 
-/* ─── Navigation (curved + floating) ─── */
+/* ─── Navigation (curved + floating + mega menu) ─── */
+const PRODUCT_ITEMS = [
+  { title: 'Runtime Governance', desc: 'Monitor and enforce policies on every tool call.', icon: Shield },
+  { title: 'Cost Firewall', desc: 'Real-time budget tracking and circuit breakers.', icon: BarChart3 },
+  { title: 'Mission Control', desc: 'Agent lifecycle management and live control.', icon: Terminal },
+  { title: 'Agent DNA', desc: 'Behavioral fingerprinting and anomaly detection.', icon: Search },
+  { title: 'Prompt Replay', desc: 'Debug by replaying failed traces with real LLM calls.', icon: FileText },
+]
+
+const SOLUTION_ITEMS = [
+  { title: 'Enterprise', desc: 'SAML, audit logs, SLAs, and RBAC permissions.', icon: Building2 },
+  { title: 'Security Teams', desc: 'SOC 2, encryption, OAuth 2.1 + PKCE, and zero-trust.', icon: Lock },
+  { title: 'Platform Engineers', desc: 'MCP protocol, OpenTelemetry, custom plugins.', icon: Cpu },
+  { title: 'Compliance & Legal', desc: 'Full audit trails, policy-as-code, and reporting.', icon: Users },
+]
+
+const RESOURCE_ITEMS = [
+  { title: 'Documentation', desc: 'Guides, API reference, and integration tutorials.', icon: BookOpen },
+  { title: 'API Reference', desc: 'Complete MCP and REST API documentation.', icon: FileText },
+  { title: 'Changelog', desc: 'What shipped this month in ARGUS.', icon: Terminal },
+  { title: 'GitHub', desc: 'Open source repository and community.', icon: Github },
+]
+
 function Navigation() {
   const scrollY = useScrollPosition()
   const scrolled = scrollY > 80
+  const [menuValue, setMenuValue] = React.useState('')
 
   return (
     <nav className={`fixed z-50 transition-all duration-700 ${
       scrolled ? 'top-3 left-4 right-4' : 'top-4 left-0 right-0'
     }`}>
-      {/* Background + blur layer — always present, fades via opacity */}
+      {/* Background + blur layer */}
       <div className={`absolute inset-0 rounded-2xl transition-opacity duration-700 ${
-        scrolled ? 'opacity-100' : 'opacity-0'
+        scrolled || menuValue ? 'opacity-100' : 'opacity-0'
       }`}>
         <div className="w-full h-full rounded-2xl bg-white/85 backdrop-blur-2xl border border-gray-200/80 shadow-[0_8px_32px_rgba(0,0,0,0.06)]" />
       </div>
-      {/* Content — same max-w always, constrained by outer nav width */}
+      {/* Content */}
       <div className="relative mx-auto max-w-7xl">
         <div className="h-14 flex items-center justify-between px-5">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group z-20">
             <img src="/LOGO.png" alt="ARGUS Logo" className="h-7 w-auto transition-transform duration-300 group-hover:scale-105" />
             <span className="text-sm font-bold tracking-tight">ARGUS</span>
           </Link>
-          <div className="hidden md:flex items-center gap-8">
-            {['Architecture', 'Integrations', 'Security'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`}
-                className="text-sm text-gray-400 hover:text-black transition-colors">
-                {item}
-              </a>
-            ))}
+
+          {/* Mega Menu — centered */}
+          <div className="hidden md:flex items-center absolute left-1/2 -translate-x-1/2">
+            <MotionNavigationMenu
+              viewport
+              value={menuValue}
+              onValueChange={setMenuValue}
+              springBounce={0}
+              springStiffness={400}
+              springDamping={30}
+              viewportClassName="!bg-white/95 !backdrop-blur-xl !border-gray-200/80 !shadow-[0_8px_32px_rgba(0,0,0,0.08)] !rounded-xl"
+              className="gap-0"
+            >
+              <MotionNavigationMenuList className="gap-0">
+                {/* Product menu */}
+                <MotionNavigationMenuItem value="product">
+                  <MotionNavigationMenuTrigger className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5 data-[state=open]:text-black">
+                    Product
+                  </MotionNavigationMenuTrigger>
+                  <MotionNavigationMenuContent innerClassName="" className="!p-0">
+                    <div className="grid w-[520px] grid-cols-[1fr_1fr] gap-1 p-2">
+                      <MotionNavigationMenuLink
+                        href="#"
+                        className="bg-white hover:bg-orange-light rounded-xl min-h-[120px] justify-between p-4 border border-gray-100"
+                      >
+                        <span className="bg-white flex size-9 items-center justify-center rounded-lg border border-gray-200">
+                          <Shield className="size-4 text-orange-600" />
+                        </span>
+                        <span className="space-y-1">
+                          <span className="block text-sm font-semibold text-gray-900">
+                            Runtime Governance
+                          </span>
+                          <span className="text-gray-400 block text-xs leading-relaxed">
+                            Monitor and enforce policies on every AI tool call in real time.
+                          </span>
+                        </span>
+                      </MotionNavigationMenuLink>
+                      <div className="grid grid-cols-1 gap-0.5">
+                        {PRODUCT_ITEMS.filter((_, i) => i > 0).map((product) => (
+                          <MotionNavigationMenuLink key={product.title} href="#">
+                            <span className="flex items-center justify-between gap-2 text-sm font-medium text-gray-800">
+                              <span className="flex items-center gap-2">
+                                <product.icon className="size-3.5 text-orange-600" />
+                                {product.title}
+                              </span>
+                              <ArrowRight className="size-3 text-gray-300 group-hover:text-orange-600 transition-colors" />
+                            </span>
+                            <span className="text-gray-400 text-xs mt-0.5">
+                              {product.desc}
+                            </span>
+                          </MotionNavigationMenuLink>
+                        ))}
+                      </div>
+                    </div>
+                  </MotionNavigationMenuContent>
+                </MotionNavigationMenuItem>
+
+                {/* Solutions menu */}
+                <MotionNavigationMenuItem value="solutions">
+                  <MotionNavigationMenuTrigger className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5 data-[state=open]:text-black">
+                    Solutions
+                  </MotionNavigationMenuTrigger>
+                  <MotionNavigationMenuContent innerClassName="" className="!p-0">
+                    <div className="w-[380px] space-y-0.5 p-2">
+                      <div className="text-gray-400 px-2.5 py-2 text-[11px] font-semibold uppercase tracking-widest">
+                        Built for teams
+                      </div>
+                      {SOLUTION_ITEMS.map((solution) => (
+                        <MotionNavigationMenuLink
+                          key={solution.title}
+                          href="#"
+                          className="grid grid-cols-[auto_1fr_auto] items-center gap-3 hover:bg-orange-light rounded-xl"
+                        >
+                          <span className="flex size-8 items-center justify-center rounded-lg">
+                            <solution.icon className="size-4.5 text-gray-600" />
+                          </span>
+                          <span className="space-y-0.5">
+                            <span className="block text-sm font-semibold text-gray-800">
+                              {solution.title}
+                            </span>
+                            <span className="text-gray-400 block text-xs leading-relaxed">
+                              {solution.desc}
+                            </span>
+                          </span>
+                          <span className="text-gray-400 rounded-lg px-1.5 py-0.5 text-xs font-medium">
+                            View
+                          </span>
+                        </MotionNavigationMenuLink>
+                      ))}
+                    </div>
+                  </MotionNavigationMenuContent>
+                </MotionNavigationMenuItem>
+
+                {/* Resources menu */}
+                <MotionNavigationMenuItem value="resources">
+                  <MotionNavigationMenuTrigger className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5 data-[state=open]:text-black">
+                    Resources
+                  </MotionNavigationMenuTrigger>
+                  <MotionNavigationMenuContent innerClassName="" className="!p-0">
+                    <div className="grid w-[460px] grid-cols-2 gap-1 p-2">
+                      <div className="space-y-0.5">
+                        {RESOURCE_ITEMS.slice(0, 3).map((resource) => (
+                          <MotionNavigationMenuLink key={resource.title} href="#" className="hover:bg-orange-light rounded-xl">
+                            <span className="flex items-center gap-2 text-sm font-medium text-gray-800">
+                              <resource.icon className="size-3.5 text-orange-600" />
+                              {resource.title}
+                            </span>
+                            <span className="text-gray-400 text-xs">
+                              {resource.desc}
+                            </span>
+                          </MotionNavigationMenuLink>
+                        ))}
+                      </div>
+                      <MotionNavigationMenuLink
+                        href="https://github.com/SigNoz/signoz"
+                        target="_blank"
+                        className="bg-white hover:bg-orange-light rounded-xl min-h-[140px] justify-between p-4 border border-gray-100"
+                      >
+                        <span className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                          <Github className="size-4" />
+                          GitHub
+                        </span>
+                        <span className="text-gray-400 text-xs leading-relaxed">
+                          Open source ARGUS. Star us on GitHub and join the community.
+                        </span>
+                        <span className="text-xs font-semibold text-orange-600">
+                          Star on GitHub →
+                        </span>
+                      </MotionNavigationMenuLink>
+                    </div>
+                  </MotionNavigationMenuContent>
+                </MotionNavigationMenuItem>
+
+                {/* Direct links */}
+                <MotionNavigationMenuItem>
+                  <MotionNavigationMenuLink
+                    href="#architecture"
+                    className="flex h-9 items-center px-3 py-1.5 text-sm text-gray-400 hover:text-black transition-colors"
+                  >
+                    Architecture
+                  </MotionNavigationMenuLink>
+                </MotionNavigationMenuItem>
+                <MotionNavigationMenuItem>
+                  <MotionNavigationMenuLink
+                    href="#integrations"
+                    className="flex h-9 items-center px-3 py-1.5 text-sm text-gray-400 hover:text-black transition-colors"
+                  >
+                    Integrations
+                  </MotionNavigationMenuLink>
+                </MotionNavigationMenuItem>
+                <MotionNavigationMenuItem>
+                  <MotionNavigationMenuLink
+                    href="#security"
+                    className="flex h-9 items-center px-3 py-1.5 text-sm text-gray-400 hover:text-black transition-colors"
+                  >
+                    Security
+                  </MotionNavigationMenuLink>
+                </MotionNavigationMenuItem>
+              </MotionNavigationMenuList>
+            </MotionNavigationMenu>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Right side actions */}
+          <div className="flex items-center gap-3 z-20">
             <Link href="/login" className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5">Sign In</Link>
             <Link href="/login" className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg bg-[#FF6B00] text-white hover:bg-[#CC5500] transition-all duration-300">
               Deploy ARGUS <ArrowRight className="w-3 h-3" />

@@ -12,6 +12,8 @@
     "antd": "^5.11.0",
     "axios": "^1.18.0",
     "chart.js": "^3.9.1",
+    "class-variance-authority": "^0.7.1",
+    "framer-motion": "^12.42.2",
     "lucide-react": "^0.510.0",
     "next": "16.2.11",
     "next-auth": "^5.0.0-beta.32",

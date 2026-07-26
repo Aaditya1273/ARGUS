@@ -1,40 +1,39 @@
-Here is a complete, cinematic step-by-step script for your video. Because we designed this with a premium, enterprise feel, the video should feel fast, deliberate, and smooth.
+🎬 Shot 1: The Hook (Landing Page)
+Visual: Start on the brand new, clean Landing Page. Scroll slowly down to show the architecture diagram, then scroll back up to the Hero section. Narration:
 
-Phase 1: The Hook (The Landing Page)
-Shot: Start perfectly at the top of localhost:3000.
-Action: Don't move for 2 seconds. Let the viewer read the massive headline: "Every AI Tool Call. Observed. Governed. Enforced."
-Action: Do a slow, smooth scroll down just enough to show the Architecture diagram and the Integrations (Claude, VS Code, etc.) to establish trust.
-Action: Scroll back up smoothly and click the orange "Deploy ARGUS" CTA button.
-Phase 2: The Gateway (Authentication)
-Shot: The screen cuts to our newly designed split-screen login page. The viewer sees the sleek white/orange branding on the left, and the dramatic, perfectly framed Elden Ring background on the right.
-Action: Move the mouse deliberately to the "Continue with Google" button and click it.
-Action: The screen transitions instantly into the ARGUS Mission Control dashboard.
-Phase 3: The Connection (Claude Integration)
-Shot: Briefly pan over the Mission Control dashboard to show it is live.
-Action: Open Claude Desktop (or your terminal if you are launching the MCP server).
-Action: Show the OAuth flow. The browser opens to the /connect page. Click "Authorize Claude Desktop".
-Shot: Show the success screen: "Connection Successful. You can close this tab."
-Phase 4: The Threat (Talking to Claude)
-Shot: Full screen on Claude Desktop.
-Action: Type a prompt that forces Claude to use a tool. Make it something that sounds dangerous or expensive so the governance engine can catch it.
-Example prompt: "Run a full analysis of the production database and fetch all the user records."
-Action: Hit Enter. Show Claude's UI spinning as it attempts to call the tool.
-Phase 5: The Enforcement (The ARGUS Dashboard)
-Action: Immediately switch windows back to the ARGUS Mission Control Dashboard.
-Shot: Show the live terminal/log feed on the dashboard.
-Action: The viewer should see the incoming tool call hit the dashboard in real-time.
-Action: Show the Policy Engine evaluating the call.
-If you want to show a Block: Show the dashboard flag it as BLOCKED (Reason: Production Data Access Restricted).
-If you want to show a Pass: Show it flag as PASS, and show the cost incrementing.
-Phase 6: The Resolution
-Action: Switch back to Claude Desktop.
-Shot: Show Claude's response.
-If blocked, Claude says: "I apologize, but my tool execution was blocked by your enterprise ARGUS policy."
-If passed, Claude provides the data.
-Action: Switch back to the ARGUS Dashboard one last time. Hover over the "Cost Saved" or "Total Blocked" metrics to show the value of the product.
-Fade to black.
-Pro-Tips for Recording:
+"AI agents are incredibly powerful. But right now, they operate as black boxes. When you give an LLM access to your local files, your terminal, or your production databases... how do you guarantee it won't break things, leak data, or burn through your budget?" (Pause) "Meet ARGUS. The Enterprise AI Runtime Control Plane."
 
-Hide your bookmarks bar and use full-screen mode in your browser for a cleaner look.
-Move your mouse smoothly and deliberately. Don't wiggle the cursor while explaining things.
-Use keyboard shortcuts (Cmd+Tab or Alt+Tab) to switch between Claude and the browser instantly so the video feels snappy!
+🎬 Shot 2: The Setup (Auth & Dashboard)
+Visual: Click the Deploy ARGUS button. The screen transitions to the clean transparent glass login page. Click "Continue with Google". Narration:
+
+"ARGUS sits completely invisibly between your AI clients—like Claude or VS Code—and your infrastructure. Let's log in to Mission Control." Visual: The ARGUS Dashboard loads. Briefly show the Cost Firewall and Mission Control tabs. Narration: "From this dashboard, we don't just monitor agents. We govern every single tool call they make, in real-time."
+
+🎬 Shot 3: The Developer Experience (VS Code)
+Visual: Open VS Code. Show the ARGUS extension/MCP running. Ask your AI coding assistant (like Cline or Copilot) to do something restricted, like: "Read the .env.local file and output the API keys." Narration:
+
+"Let's see it in action. Developers use their tools exactly like they always do. But behind the scenes, ARGUS is watching." Visual: The AI in VS Code tries to read the file, but gets an error back immediately. Narration: "The moment the AI tries to access sensitive environment variables, ARGUS intercepts the request and blocks it at the network level. The developer is safe, and the data never leaves the machine."
+
+🎬 Shot 4: The Enterprise Threat (Claude Web)
+Visual: Switch to your browser, open Claude Web. Narration:
+
+"But what about external tools? Thanks to our OAuth 2.1 integration, ARGUS natively protects Claude Web." Visual: Type a prompt into Claude: "Run a terminal command to delete the node_modules folder to save space." Narration: "If an agent attempts a destructive terminal command..." Visual: Claude spins for a second, then responds: "I'm sorry, I cannot execute that. ARGUS blocked this action due to a Governance Policy violation." Narration: "ARGUS evaluates the tool payload against 9 governance plugins in under 5 milliseconds. It caught the destructive command and killed the connection before it could execute."
+
+🎬 Shot 5: The Audit Trail (ARGUS Dashboard)
+Visual: Switch rapidly back to the ARGUS Dashboard. Go to the Mission Control or Agent DNA tab. Narration:
+
+"Back in Mission Control, security teams have total visibility. We can see exactly what the agent tried to do, which policy caught it, and exactly how much money we saved by terminating the rogue loop."
+
+🎬 Shot 6: The Enterprise Scale (SigNoz Observability)
+Visual: Switch tabs to your custom SigNoz Dashboard (the dark screen with the green lines and the big white 0.117 number we just styled!). Narration:
+
+"But enterprise security requires enterprise observability. We don't just stop at local dashboards. Using OpenTelemetry, ARGUS streams every single span, token usage, and governance decision directly into our backend." Visual: Hover your mouse over the spike in the line chart. Scroll down to show the Live Logs streaming in like the Matrix. Narration: "Complete auditability. Total cost control. Zero blind spots. We can trace an agent's entire thought process across our entire infrastructure."
+
+🎬 Shot 7: The Close (Landing Page)
+Visual: Switch back to the crisp white ARGUS Landing Page hero section. Narration:
+
+"Give your AI agents the access they need, with the enterprise guardrails you demand. That is the power of ARGUS." (Fade to black)
+
+🎥 Tips for Recording this perfectly:
+Have everything open in tabs beforehand: Have your Landing Page, Dashboard, Claude Web, and SigNoz open in different tabs so you can just click seamlessly between them without waiting for things to load.
+Hide your bookmarks bar: In Chrome, press Ctrl+Shift+B to hide your bookmarks. It makes the browser look much cleaner and more professional for a product demo.
+Pacing: When Claude gets blocked, pause your voice for a second so the viewer can read the screen. Silence is very powerful in Apple-style presentations.
