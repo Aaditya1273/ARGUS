@@ -6,8 +6,15 @@ import { Providers } from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Donezo - Dashboard',
-  description: 'Plan, prioritize and accomplish your task with ease.',
+  title: 'ARGUS — AI Runtime Governance & Control Plane',
+  description:
+    'ARGUS intercepts every AI tool call before execution, evaluates enterprise policies in milliseconds, and automatically blocks unsafe, expensive, or non-compliant behaviour.',
+  openGraph: {
+    title: 'ARGUS — AI Runtime Governance & Control Plane',
+    description:
+      'Observe, govern, and enforce policies on your AI agents in real time. The enterprise runtime control plane for AI tool calls.',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
@@ -17,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-[#f8f9fa] text-gray-900 min-h-screen`} suppressHydrationWarning>
+      <body className={`${inter.className} bg-white text-black min-h-screen antialiased`} suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>

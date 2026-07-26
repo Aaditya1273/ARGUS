@@ -320,73 +320,82 @@ function LiveTerminal() {
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-20 overflow-hidden bg-[#fafafa]">
+    <section className="relative min-h-[90vh] flex flex-col justify-center pt-[120px] pb-[80px] overflow-hidden bg-[#fafafa]">
       
-      {/* Background Mountain — seamless blend */}
+      {/* Background Mountain — 100% opacity, integrated via haze and gradients */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <img src="/bg-mountain.png" alt="Mountains" className="w-full h-full object-cover object-right mix-blend-multiply opacity-100" />
+        <img src="/bg-mountain.png" alt="Mountains" className="w-full h-full object-cover object-right opacity-100 saturate-[0.45] contrast-[0.85] mix-blend-multiply" />
+        
+        {/* Atmospheric white gradients and soft haze */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#fafafa] via-[#fafafa]/85 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#fafafa] via-transparent to-transparent opacity-90" />
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
       </div>
       
-      {/* Background Lines */}
-      <div className="absolute top-0 right-0 w-[65%] h-[80%] pointer-events-none z-[1]">
-        <img src="/bg-lines.png" alt="Lines" className="w-full h-full object-contain object-right-top opacity-50" />
+      {/* Background Lines — eye-guides behind headline */}
+      <div className="absolute top-0 right-0 w-[65%] h-[80%] pointer-events-none z-[1] opacity-30">
+        <img src="/bg-lines.png" alt="Lines" className="w-full h-full object-contain object-right-top" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-[45%_55%] gap-12 items-center">
-        {/* Left Content */}
-        <div className="space-y-6 pt-10 pb-16">
-          {/* Status badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-gray-200 bg-white/60 backdrop-blur-sm text-[11px] font-mono text-gray-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse-dot" />
-            v1.0.0 — Runtime Control Plane
-          </div>
+      <div className="relative z-10 w-full max-w-[1680px] mx-auto px-[5vw] lg:px-[80px]">
+        
+        {/* Main Grid: Left 44%, Right 56% */}
+        <div className="grid grid-cols-1 md:grid-cols-[44%_56%] w-full items-center">
+          
+          {/* Left Content */}
+          <div className="flex flex-col relative z-20">
+            {/* Status badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 bg-white/60 backdrop-blur-sm text-[11px] font-mono text-gray-700 w-fit mb-[48px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse-dot" />
+              v1.0.0 — Runtime Control Plane
+            </div>
 
-          {/* Headline */}
-          <div className="relative z-20">
-            <h1 className="text-[4.5rem] xl:text-[5.5rem] leading-[1.0] font-bold text-[#0A0A0A] tracking-[-0.03em]">
+            {/* Headline - Max width 520px, 900 weight, tight tracking, 32px mb */}
+            <h1 className="max-w-[520px] text-[4.5rem] xl:text-[5.5rem] leading-[1.0] font-[900] text-[#0A0A0A] tracking-tighter mb-[32px]">
               Every AI<br />Tool Call.
             </h1>
-            <div className={`mt-2 ${caveat.className}`} style={{ transform: 'rotate(-4deg) translateY(-5px)' }}>
-              <div className="text-[3.8rem] xl:text-[4.8rem] leading-[1.1] text-[#FF6B00]">Observed.</div>
-              <div className="text-[3.8rem] xl:text-[4.8rem] leading-[1.1] text-[#0D1117]">Governed.</div>
-              <div className="text-[3.8rem] xl:text-[4.8rem] leading-[1.1] text-[#FF6B00]">Enforced.</div>
+
+            {/* Handwritten words */}
+            <div className={`flex flex-col gap-[34px] mb-[40px] pl-[10px] ${caveat.className}`} style={{ transform: 'rotate(-4deg)' }}>
+              <div className="text-[3.8rem] xl:text-[4.5rem] leading-[0.7] text-[#FF6B00]">Observed.</div>
+              <div className="text-[3.8rem] xl:text-[4.5rem] leading-[0.7] text-[#0D1117]">Governed.</div>
+              <div className="text-[3.8rem] xl:text-[4.5rem] leading-[0.7] text-[#FF6B00]">Enforced.</div>
+            </div>
+
+            {/* Subheadline - max-w 560px for improved readability */}
+            <p className="max-w-[560px] text-[16px] text-gray-600 leading-[1.65] font-medium mb-[40px]">
+              ARGUS intercepts every AI tool call before execution, evaluates enterprise policies in milliseconds, and automatically blocks unsafe, expensive, or non-compliant behaviour.
+            </p>
+
+            {/* CTAs - h-56px, gap 16px */}
+            <div className="flex items-center gap-[16px]">
+              <Link href="/login" className="h-[56px] px-8 bg-[#FF6B00] hover:bg-[#CC5500] text-white rounded-lg font-semibold text-[15px] transition-all flex items-center justify-center gap-2">
+                Deploy ARGUS <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a href="#product" className="h-[56px] px-8 bg-transparent hover:bg-gray-50 text-gray-800 rounded-lg font-semibold text-[15px] transition-all border border-gray-300 flex items-center justify-center gap-2">
+                <Play className="w-4 h-4 text-gray-600" /> View Live Runtime
+              </a>
             </div>
           </div>
 
-          {/* Subheadline */}
-          <p className="text-[15px] max-w-[420px] text-gray-600 leading-relaxed font-medium">
-            ARGUS intercepts every AI tool call before execution, evaluates enterprise policies in milliseconds, and automatically blocks unsafe, expensive, or non-compliant behaviour.
-          </p>
-
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-            <Link href="/login" className="px-8 py-3.5 bg-[#FF6B00] hover:bg-[#CC5500] text-white rounded-lg font-semibold text-[15px] transition-all flex items-center gap-2">
-              Deploy ARGUS <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a href="#product" className="px-8 py-3.5 bg-white hover:bg-gray-50 text-gray-800 rounded-lg font-semibold text-[15px] transition-all border border-gray-200 shadow-sm flex items-center gap-2">
-              <Play className="w-4 h-4 text-gray-600" /> View Live Runtime
-            </a>
+          {/* Right Content - 3D Shield */}
+          <div className="relative h-full flex items-center justify-center pointer-events-none">
+            <img 
+              src="/hero-shield.png" 
+              alt="ARGUS Shield" 
+              className="w-[68%] max-w-[400px] object-contain drop-shadow-2xl transform translate-x-[125px] translate-y-[65px]"
+            />
           </div>
         </div>
 
-        {/* Right Content - 3D Shield */}
-        <div className="relative h-full min-h-[500px] md:min-h-[700px] flex items-center justify-center pointer-events-none mt-10 md:mt-0">
-          <img 
-            src="/hero-shield.png" 
-            alt="ARGUS Shield" 
-            className="absolute z-10 w-[110%] max-w-[850px] right-[-5%] top-1/2 -translate-y-1/2 drop-shadow-2xl"
-          />
+        {/* Bottom Trust Badges (Normal Document Flow) - exactly 80px below CTAs */}
+        <div className="w-[78%] max-w-[1200px] mx-auto mt-[80px] hidden md:flex items-center justify-between px-10 h-[64px] rounded-[20px] bg-gray-900/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] text-white">
+          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Shield className="w-4 h-4 text-[#FF6B00]" /> 99.99% Uptime SLA</span>
+          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Lock className="w-4 h-4 text-[#FF6B00]" /> SOC 2 Compliant</span>
+          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Globe className="w-4 h-4 text-[#FF6B00]" /> Deploy Anywhere</span>
+          <span className="flex items-center gap-2.5 text-[14px] font-medium"><Github className="w-4 h-4 text-[#FF6B00]" /> Open Source</span>
         </div>
-      </div>
-      
-      {/* Bottom Trust Badges (Floating Dark Pill) */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] md:max-w-4xl px-4 z-20 hidden md:block">
-        <div className="flex flex-wrap items-center justify-center md:justify-between gap-6 px-10 py-5 rounded-2xl bg-gray-900/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] text-white">
-          <span className="flex items-center gap-2.5 text-sm font-medium"><Shield className="w-4 h-4 text-[#FF6B00]" /> 99.99% Uptime SLA</span>
-          <span className="flex items-center gap-2.5 text-sm font-medium"><Lock className="w-4 h-4 text-[#FF6B00]" /> SOC 2 Compliant</span>
-          <span className="flex items-center gap-2.5 text-sm font-medium"><Globe className="w-4 h-4 text-[#FF6B00]" /> Deploy Anywhere</span>
-          <span className="flex items-center gap-2.5 text-sm font-medium"><Github className="w-4 h-4 text-[#FF6B00]" /> Open Source</span>
-        </div>
+
       </div>
     </section>
   )
