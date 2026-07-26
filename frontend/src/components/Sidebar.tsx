@@ -18,6 +18,9 @@ const menuItems = [
   { label: 'Replay',          href: '/replay',           icon: CalendarClock },
 ]
 
+import { useSession, signOut } from 'next-auth/react'
+import { LogOut } from 'lucide-react'
+
 const generalItems = [
   { label: 'Settings', href: '/settings', icon: Settings },
   { label: 'Help',     href: '/help',     icon: HelpCircle },
@@ -25,6 +28,7 @@ const generalItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
 
   const NavItem = ({ label, href, icon: Icon }: { label: string; href: string; icon: React.ElementType }) => {
     const active = pathname === href
@@ -49,7 +53,7 @@ export function Sidebar() {
   return (
     <aside className="w-60 bg-[#f8f9fa] border-r border-gray-200 flex flex-col h-full shrink-0 select-none">
       {/* Logo */}
-      <div className="h-[72px] flex items-center px-5">
+      <div className="h-[72px] flex items-center px-5 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center shadow-sm flex-shrink-0">
             <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -71,6 +75,35 @@ export function Sidebar() {
         </div>
         {generalItems.map(item => <NavItem key={item.href} {...item} />)}
       </nav>
+
+      {/* User Profile */}
+      {session?.user && (
+        <div className="p-4 border-t border-gray-200 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 overflow-hidden">
+              {session.user.image ? (
+                <img src={session.user.image} alt={session.user.name || "User"} className="w-9 h-9 rounded-full shrink-0 border border-gray-200" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-medium text-gray-600">{session.user.name?.charAt(0) || 'U'}</span>
+                </div>
+              )}
+              <div className="overflow-hidden">
+                <p className="text-sm font-medium text-gray-900 truncate">{session.user.name}</p>
+                <p className="text-xs text-gray-500 truncate">{session.user.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
+
