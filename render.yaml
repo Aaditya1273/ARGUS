@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: argus-server
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    envVars:
+      - key: ARGUS_PUBLIC_BASE
+        sync: false
+      - key: ARGUS_DASHBOARD_BASE
+        value: "https://argus-signoz.netlify.app"
