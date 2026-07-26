@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const BACKEND_URL = 'http://127.0.0.1:8080/api/v1/argus/agents'
+const BACKEND_URL = 'https://argus-production-0c2d.up.railway.app/api/v1/argus/agents'
 
 export async function GET() {
   try {

@@ -89,7 +89,7 @@ export default function GovernancePage() {
             <p className="text-sm text-gray-600 leading-relaxed">
               Every MCP tool call is evaluated against all active plugins. When a rule fires, the recovery action executes automatically
               and a governance violation span event is emitted to SigNoz. Connect Claude at{' '}
-              <code className="text-orange-600 bg-orange-50 px-1 rounded">http://localhost:8080/api/v1/mcp</code> to see live violations.
+              <code className="text-orange-600 bg-orange-50 px-1 rounded">https://argus-production-0c2d.up.railway.app/api/v1/mcp</code> to see live violations.
             </p>
           </div>
         </>

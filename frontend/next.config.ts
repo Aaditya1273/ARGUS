@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const BACKEND = "http://127.0.0.1:8080";
+const BACKEND = "https://argus-production-0c2d.up.railway.app";
 
 const nextConfig: NextConfig = {
   async rewrites() {

@@ -64,7 +64,7 @@ export default function MissionControlPage() {
 
     const connect = () => {
       // Connect WebSocket directly to the Go backend at port 8080
-      ws = new WebSocket(`ws://127.0.0.1:8080/api/v1/argus/ws`)
+      ws = new WebSocket(`wss://argus-production-0c2d.up.railway.app/api/v1/argus/ws`)
       ws.onopen = () => { setConnected(true); retryDelay = 1000 }
       ws.onclose = () => {
         setConnected(false)

@@ -303,3 +303,182 @@ Claude Web calls POST /api/v1/mcp/bearer
 
 Source: `pkg/query-service/argus/telemetry/tracer.go`
 Bootstrapped in: `cmd/argus-server/main.go → initTracer()`
+
+---
+
+## Dashboard Tabs — What Each Does & Why It Matters
+
+### 💰 Cost Firewall
+
+**What it does**
+- Shows a live burn rate chart — real cost data updated every 5 minutes from actual MCP tool calls
+- Displays Current Burn Rate, Daily Total, Blocked Requests, and Active Policies in stat cards
+- The orange highlight card shows the live `$x.xx/hr` burn rate across all connected agents
+- Budget donut shows percentage of the $100 global limit consumed
+- Enforced Policies list shows which cost rules are actively blocking
+
+**User benefit**
+- You never get surprised by a $500 OpenAI bill. ARGUS cuts the connection the moment an agent hits its budget.
+- Engineers can set a $5 limit for dev, $25 for staging, $100 for prod — per session.
+- The chart makes it obvious when an agent went rogue (sudden spike = runaway loop).
+
+**Data source**: `GET /api/v1/argus/stats` — real burn from the cost firewall accumulator, not mocked.
+
+---
+
+### 🎯 Mission Control
+
+**What it does**
+- Shows every connected agent (Claude Web, Claude Desktop, demo agent) in a live table
+- Columns: Agent ID, Status (RUNNING/PAUSED/BLOCKED/DEAD), Cost, Tokens, Latency, Last Tool
+- Kill, Pause, Resume buttons send real commands via WebSocket to the agent
+- Live indicator turns green when the WebSocket is connected, red when reconnecting
+- Stats bar shows Total Agents, Healthy, Blocked, Live Cost, Incidents, Active Policies
+
+**User benefit**
+- You can stop a runaway Claude mid-task without touching Claude's UI.
+- One click kills a session that's spending $10 analyzing the wrong directory.
+- The live WebSocket stream means you see new agents appear within 1 second of connection.
+
+**Data source**: `GET /api/v1/argus/agents` + WebSocket `ws://localhost:8080/api/v1/argus/ws`
+
+---
+
+### 🧬 Agent DNA
+
+**What it does**
+- Builds a behavioral fingerprint for every agent: avg cost per run, avg latency, p95 latency, tool usage distribution
+- Computes an anomaly score (0–100) using Z-score deviation from the baseline
+- Shows a donut chart of the anomaly score — green (normal), orange (elevated), red (high risk)
+- Shows "Drift Detected" badge when an agent's behavior deviates significantly from its historical baseline
+- Tool Usage Distribution bar chart shows which tools the agent calls most
+
+**User benefit**
+- Catch agents behaving unusually before they cause damage. If `search_code` suddenly runs 100x more than normal, the DNA score spikes and you see it here.
+- Useful for compliance: proves agent behavior is consistent and predictable over time.
+- No configuration needed — baselines are built automatically from real MCP session data.
+
+**Data source**: `GET /api/v1/argus/dna/profiles` — derived from real MCP session telemetry.
+
+---
+
+### 🚨 Incidents
+
+**What it does**
+- Shows all agents currently in BLOCKED or DEAD status — these are active incidents
+- Stat cards: Open Incidents, Healthy Agents, Critical Rules active
+- Table shows agent ID, status pill, cost at time of incident, latency, last tool called, timestamp
+- Auto-refreshes every 8 seconds
+
+**User benefit**
+- Single pane of glass for on-call engineers. If something breaks at 2am, this is the first tab you open.
+- Immediately see which agent triggered the problem and what it was doing (last tool + cost).
+- Distinguishes BLOCKED (budget/governance) from DEAD (killed manually or crashed).
+
+**Data source**: Filtered from `GET /api/v1/argus/agents` — only BLOCKED and DEAD states.
+
+---
+
+### 📋 Policies
+
+**What it does**
+- Lists all active cost enforcement policies with their name, metric, threshold, operator, and action
+- New Policy form: set a name, dollar threshold, and action (KILL_RUN / ALERT / CIRCUIT_BREAKER / TRIGGER_FALLBACK)
+- Policies are stored in the backend policy engine and evaluated on every tool call
+
+**User benefit**
+- Define budget guardrails without writing code: "Block any agent spending over $10" → one form submit.
+- Different actions for different thresholds: ALERT at $5, KILL_RUN at $20.
+- Policies survive server restarts (persisted in memory, designed to be wired to a DB).
+
+**Data source**: `GET/POST /api/v1/argus/cost/policies`
+
+---
+
+### ⚖️ Governance
+
+**What it does**
+- Shows all 9 active detection plugins with severity level and automatic action
+- Each rule runs on every MCP tool call and evaluates the agent's behavior in real time
+- When a rule fires, ARGUS emits an OTel span event to SigNoz and executes the recovery action
+
+**The 9 plugins:**
+
+| Plugin | What it detects | Why it matters |
+|--------|----------------|----------------|
+| Infinite Tool Loop | Same tool called >5x in a row | Claude stuck calling `read_file` forever — burning tokens and money |
+| Token Explosion | Single call uses >10k tokens | Accidental "summarize the entire internet" prompt |
+| Budget Exceeded | Session cost > limit | Last line of defence before billing surprise |
+| Latency Spike | Response time >5x baseline | Agent calling an unresponsive service in a loop |
+| Agent Stuck | No progress for >2 minutes | Deadlock or infinite wait |
+| Retry Storm | Same operation retried >10x | Network blip causing exponential retry cascade |
+| Repeated Prompt | Same prompt sent >3x | Memory leak — agent forgot its previous answer |
+| Prompt Recursion | Prompt contains its own output | Self-referential loop that explodes context |
+| Tool Timeout | Tool call exceeds 30s | External API timeout causing agent to hang |
+
+**User benefit**
+- Zero configuration needed — all 9 rules are on by default.
+- Each rule has a severity (CRITICAL / HIGH / MEDIUM) and an automatic action (KILL_RUN, ALERT, etc.).
+- Violations appear in SigNoz as `argus.governance.violation` spans with full context.
+
+**Data source**: `GET /api/v1/argus/governance/rules`
+
+---
+
+### 🔌 Plugins
+
+**What it does**
+- **Connect tab**: One-click "Add to Claude Web" button — opens `claude.ai` with the ARGUS MCP server pre-filled. User just clicks Add.
+- **5 client chips**: claude.ai (open pre-filled), Claude Code (copy CLI command), Cursor (deep link), VS Code (deep link), JSON (copy config)
+- Shows the MCP endpoint URL with a copy button
+- Explains the full OAuth 2.1 flow in a code block
+- **Claude Desktop tab**: Shows the config file path and JSON to paste
+- **All clients tab**: CLI commands and JSON configs for every supported client
+- **Active MCP Sessions table**: Every connected Claude session — OAuth sessions tagged with "OAuth" pill
+- **Live Tool Call Stream**: Real-time feed of every tool Claude calls — tool name, cost, latency, cumulative burn bar
+
+**User benefit**
+- No manual URL typing. One button opens Claude with everything pre-filled.
+- The live stream is the "wow moment" — watch Claude's tool calls appear in real time as it works.
+- Supports every MCP client: Claude Web, Claude Desktop, Claude Code CLI, Cursor, VS Code.
+- Budget bar in the stream turns red when Claude approaches the limit — you see the firewall trigger.
+
+**Data source**: OAuth 2.1 flow via `/register`, `/authorize`, `/token` + WebSocket + `GET /api/v1/mcp/sessions`
+
+---
+
+### ⏪ Replay
+
+**What it does**
+- Enter a Trace ID (a session ID from Mission Control or the stream)
+- Optionally write a new prompt to test against
+- Select a model (gpt-3.5-turbo, gpt-4o, gpt-4o-mini, claude-3-5-sonnet)
+- Click Run Replay — ARGUS reconstructs the original trace and calls the real OpenAI API with your new prompt
+- Shows a side-by-side diff: Original Response vs New Response
+- Metrics: Latency delta, Cost delta, Semantic diff
+
+**User benefit**
+- Debug why an agent gave a wrong answer: replay the exact same context with a fixed prompt.
+- Compare models: "Does gpt-4o-mini give the same answer as gpt-4o for half the cost?"
+- Prompt engineering without re-running the entire agent workflow.
+- Requires `ARGUS_LLM_API_KEY` or `OPENAI_API_KEY` in `.env.local` for real LLM calls.
+
+**Data source**: `GET /api/v1/argus/replay/{trace_id}` + `POST /api/v1/argus/replay/execute`
+
+---
+
+### ⚙️ Settings
+
+**What it does**
+- Shows SigNoz Cloud connection status in real time (green = connected, red = not configured)
+- Displays the endpoint, region, and key size to verify credentials loaded correctly
+- Shows the OTel exporter config YAML you can paste into your own agents to send spans to the same SigNoz instance
+- Links directly to `https://app.in2.signoz.cloud` for the trace explorer
+- Shows all ARGUS URLs (backend, dashboard, MCP endpoint, OAuth discovery) with copy buttons
+
+**User benefit**
+- Instant verification that SigNoz is connected without opening a terminal.
+- Copy the OTel config and paste into any other service to add it to the same observability backend.
+- All connection strings in one place — no digging through `.env.local` files.
+
+**Data source**: `GET /api/v1/argus/signoz/health` + `GET /api/v1/argus/signoz/config`

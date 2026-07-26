@@ -6,7 +6,7 @@ export async function POST(
 ) {
   try {
     const { id, action } = await params
-    const BACKEND_URL = `http://127.0.0.1:8080/api/v1/argus/agents/${id}/${action}`
+    const BACKEND_URL = `https://argus-production-0c2d.up.railway.app/api/v1/argus/agents/${id}/${action}`
 
     const res = await fetch(BACKEND_URL, {
       method: 'POST',

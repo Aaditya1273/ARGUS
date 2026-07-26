@@ -25,8 +25,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('http://127.0.0.1:8080/api/v1/argus/signoz/health').then(r => r.json()),
-      fetch('http://127.0.0.1:8080/api/v1/argus/signoz/config').then(r => r.text()),
+      fetch('https://argus-production-0c2d.up.railway.app/api/v1/argus/signoz/health').then(r => r.json()),
+      fetch('https://argus-production-0c2d.up.railway.app/api/v1/argus/signoz/config').then(r => r.text()),
     ]).then(([h, cfg]) => {
       setSignoz(h); setOtelConfig(cfg)
     }).catch(() => {}).finally(() => setLoading(false))
@@ -130,10 +130,10 @@ export default function SettingsPage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { l: 'Backend URL',     v: 'http://localhost:8080' },
+            { l: 'Backend URL',     v: 'https://argus-production-0c2d.up.railway.app' },
             { l: 'Dashboard URL',   v: 'http://localhost:3000' },
-            { l: 'MCP Endpoint',    v: 'http://localhost:8080/api/v1/mcp' },
-            { l: 'OAuth Discovery', v: 'http://localhost:8080/.well-known/oauth-authorization-server' },
+            { l: 'MCP Endpoint',    v: 'https://argus-production-0c2d.up.railway.app/api/v1/mcp' },
+            { l: 'OAuth Discovery', v: 'https://argus-production-0c2d.up.railway.app/.well-known/oauth-authorization-server' },
           ].map(s => (
             <div key={s.l} className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
               <div>

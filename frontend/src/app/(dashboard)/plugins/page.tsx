@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { Terminal, FileText, Search, FolderOpen, BarChart3, Activity, Cpu, Bell, Globe, Braces, Code, DollarSign, Copy, Check, ExternalLink, Plug, AlertTriangle } from 'lucide-react'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const MCP_URL    = 'http://localhost:8080/api/v1/mcp'
+const MCP_URL    = 'https://argus-production-0c2d.up.railway.app/api/v1/mcp'
 const CARD_NAME  = 'argus'
 const claudeLink = `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=${encodeURIComponent(CARD_NAME)}&connectorUrl=${encodeURIComponent(MCP_URL)}`
 const cursorLink = `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(CARD_NAME)}&config=${typeof window !== 'undefined' ? btoa(JSON.stringify({ url: MCP_URL })) : ''}`
@@ -101,7 +101,7 @@ export default function PluginsPage() {
   useEffect(() => {
     let ws: WebSocket, delay = 1000
     const conn = () => {
-      ws = new WebSocket('ws://127.0.0.1:8080/api/v1/argus/ws')
+      ws = new WebSocket('wss://argus-production-0c2d.up.railway.app/api/v1/argus/ws')
       ws.onopen  = () => { setLive(true); delay = 1000 }
       ws.onclose = () => { setLive(false); setTimeout(conn, delay); delay = Math.min(delay * 2, 30000) }
       ws.onmessage = (e) => {

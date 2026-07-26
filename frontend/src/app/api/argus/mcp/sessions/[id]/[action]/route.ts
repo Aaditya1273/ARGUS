@@ -6,7 +6,7 @@ export async function POST(
 ) {
   try {
     const { id, action } = await params
-    const BACKEND_URL = `http://127.0.0.1:8080/api/v1/mcp/sessions/${id}/${action}`
+    const BACKEND_URL = `https://argus-production-0c2d.up.railway.app/api/v1/mcp/sessions/${id}/${action}`
 
     const body = await request.text()
     const res = await fetch(BACKEND_URL, {

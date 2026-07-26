@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const BACKEND_BASE = 'http://127.0.0.1:8080/api/v1/mcp'
+const BACKEND_BASE = 'https://argus-production-0c2d.up.railway.app/api/v1/mcp'
 
 export async function GET() {
   try {
