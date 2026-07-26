@@ -63,12 +63,13 @@ function Chips() {
     { k: 'cc',  l: 'Claude Code', t: 'Copy claude mcp add command',    g: 'copy' as const, a: cp('cc', claudeCode) },
     { k: 'cur', l: 'Cursor',      t: "Open Cursor's install prompt",   g: 'open' as const, a: () => { window.location.href = cursorLink } },
     { k: 'vsc', l: 'VS Code',     t: "Open VS Code's install prompt",  g: 'open' as const, a: () => { window.location.href = vscodeLink } },
-    { k: 'jsn', l: 'JSON',        t: 'Copy mcpServers JSON',           g: 'copy' as const, a: cp('jsn', genericCfg) },
+    { k: 'cdx', l: 'Codex',       t: 'Copy MCP config for Codex',      g: 'copy' as const, a: cp('cdx', genericCfg) },
+    { k: 'jsn', l: 'JSON',        t: 'Copy generic mcpServers JSON',   g: 'copy' as const, a: cp('jsn', genericCfg) },
   ]
   return (
     <div>
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Add to Your Agent</p>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
         {chips.map(c => (
           <button key={c.k} onClick={c.a} title={c.t}
             className={`flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
