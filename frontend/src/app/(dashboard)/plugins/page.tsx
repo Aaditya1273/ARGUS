@@ -221,9 +221,9 @@ export default function PluginsPage() {
                   ['5.', 'Every tool call →', 'POST /api/v1/mcp/bearer  Authorization: Bearer rmt_at_…'],
                 ].map(([n, a, b]) => (
                   <p key={n} className="text-[12px]">
-                    <span className="text-gray-600">{n} </span>
-                    <span className="text-gray-400">{a} </span>
-                    <span className="text-orange-400">{b}</span>
+                    <span className="text-gray-800 font-medium">{n} </span>
+                    <span className="text-gray-600">{a} </span>
+                    <span className="text-[#FF6B00] font-medium">{b}</span>
                   </p>
                 ))}
               </div>

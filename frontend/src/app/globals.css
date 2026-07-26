@@ -308,8 +308,9 @@ body {
 
 /* ─── Code block ─── */
 .code-block {
-  background: var(--black);
-  color: #CDD6F4;
+  background: #FDFCF8;
+  color: #1d1d1f;
+  border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   padding: 16px;
   font-size: 0.75rem;
