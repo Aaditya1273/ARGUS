@@ -1,6 +1,6 @@
 module github.com/SigNoz/signoz
 
-go 1.23.0
+go 1.24.0
 
 require (
 	dario.cat/mergo v1.0.2
