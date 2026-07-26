@@ -146,7 +146,7 @@ function Navigation() {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-400 hover:text-black transition-colors px-3 py-1.5">Sign In</Link>
-            <Link href="/login" className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-black text-white hover:bg-gray-800 transition-all duration-300">
+            <Link href="/login" className="inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg bg-[#FF6B00] text-white hover:bg-[#CC5500] transition-all duration-300">
               Deploy ARGUS <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -319,29 +319,22 @@ function LiveTerminal() {
 }
 
 function HeroSection() {
-  const heroRef = useRef<HTMLDivElement>(null)
-  const [mouse, setMouse] = useState({ x: 0, y: 0 })
-  const handleMove = useCallback((e: React.MouseEvent) => {
-    if (!heroRef.current) return
-    const r = heroRef.current.getBoundingClientRect()
-    setMouse({ x: (e.clientX - r.left) / r.width - 0.5, y: (e.clientY - r.top) / r.height - 0.5 })
-  }, [])
-
   return (
-    <section ref={heroRef} onMouseMove={handleMove} className="relative min-h-screen flex items-center justify-center pt-24 pb-20 overflow-hidden bg-[#fafafa]">
-      {/* Background Mountain */}
-      <div className="absolute inset-0 z-0">
+    <section className="relative min-h-screen flex items-center justify-center pt-24 pb-20 overflow-hidden bg-[#fafafa]">
+      
+      {/* Background Mountain — seamless blend */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <img src="/bg-mountain.png" alt="Mountains" className="w-full h-full object-cover object-right mix-blend-multiply opacity-100" />
       </div>
       
       {/* Background Lines */}
-      <div className="absolute top-0 right-0 w-full h-[80%] pointer-events-none z-0">
+      <div className="absolute top-0 right-0 w-[65%] h-[80%] pointer-events-none z-[1]">
         <img src="/bg-lines.png" alt="Lines" className="w-full h-full object-contain object-right-top opacity-50" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-[45%_55%] gap-12 items-center">
         {/* Left Content */}
-        <div className="space-y-6 pt-10">
+        <div className="space-y-6 pt-10 pb-16">
           {/* Status badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-gray-200 bg-white/60 backdrop-blur-sm text-[11px] font-mono text-gray-700">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse-dot" />
@@ -350,18 +343,19 @@ function HeroSection() {
 
           {/* Headline */}
           <div className="relative z-20">
-            <h1 className="text-[4.5rem] sm:text-[6rem] leading-[1.0] font-bold text-[#0A0A0A] tracking-[-0.03em]">
+            <h1 className="text-[4.5rem] xl:text-[5.5rem] leading-[1.0] font-bold text-[#0A0A0A] tracking-[-0.03em]">
               Every AI<br />Tool Call.
             </h1>
-            <div className={`text-[3.5rem] sm:text-[5.5rem] leading-[1.1] mt-0 text-[#FF6B00] ${caveat.className}`} style={{ transform: 'rotate(-4deg) translateY(-10px)' }}>
-              Observed.<br />Governed.<br />Enforced.
+            <div className={`mt-2 ${caveat.className}`} style={{ transform: 'rotate(-4deg) translateY(-5px)' }}>
+              <div className="text-[3.8rem] xl:text-[4.8rem] leading-[1.1] text-[#FF6B00]">Observed.</div>
+              <div className="text-[3.8rem] xl:text-[4.8rem] leading-[1.1] text-[#0D1117]">Governed.</div>
+              <div className="text-[3.8rem] xl:text-[4.8rem] leading-[1.1] text-[#FF6B00]">Enforced.</div>
             </div>
           </div>
 
           {/* Subheadline */}
-          <p className="text-lg sm:text-xl max-w-[500px] text-gray-600 leading-relaxed font-medium">
-            ARGUS intercepts every AI tool call before execution, evaluates enterprise policies in milliseconds,
-            and automatically blocks unsafe, expensive, or non-compliant behaviour.
+          <p className="text-[15px] max-w-[420px] text-gray-600 leading-relaxed font-medium">
+            ARGUS intercepts every AI tool call before execution, evaluates enterprise policies in milliseconds, and automatically blocks unsafe, expensive, or non-compliant behaviour.
           </p>
 
           {/* CTAs */}
@@ -376,22 +370,18 @@ function HeroSection() {
         </div>
 
         {/* Right Content - 3D Shield */}
-        <div className="relative h-[500px] md:h-[700px] flex items-center justify-center pointer-events-none mt-10 md:mt-0">
+        <div className="relative h-full min-h-[500px] md:min-h-[700px] flex items-center justify-center pointer-events-none mt-10 md:mt-0">
           <img 
             src="/hero-shield.png" 
             alt="ARGUS Shield" 
-            className="absolute z-10 w-[120%] max-w-[800px] right-[-10%]"
-            style={{ 
-              transform: `perspective(1000px) rotateX(${-mouse.y * 10}deg) rotateY(${mouse.x * 10}deg)`, 
-              transition: 'transform 0.1s ease-out' 
-            }} 
+            className="absolute z-10 w-[110%] max-w-[850px] right-[-5%] top-1/2 -translate-y-1/2 drop-shadow-2xl"
           />
         </div>
       </div>
       
-      {/* Bottom Trust Badges */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl px-6 z-20 hidden md:block">
-        <div className="flex items-center justify-between px-10 py-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] text-white">
+      {/* Bottom Trust Badges (Floating Dark Pill) */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] md:max-w-4xl px-4 z-20 hidden md:block">
+        <div className="flex flex-wrap items-center justify-center md:justify-between gap-6 px-10 py-5 rounded-2xl bg-gray-900/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] text-white">
           <span className="flex items-center gap-2.5 text-sm font-medium"><Shield className="w-4 h-4 text-[#FF6B00]" /> 99.99% Uptime SLA</span>
           <span className="flex items-center gap-2.5 text-sm font-medium"><Lock className="w-4 h-4 text-[#FF6B00]" /> SOC 2 Compliant</span>
           <span className="flex items-center gap-2.5 text-sm font-medium"><Globe className="w-4 h-4 text-[#FF6B00]" /> Deploy Anywhere</span>
@@ -401,6 +391,7 @@ function HeroSection() {
     </section>
   )
 }
+
 
 /* ══════════════════════════════════════════════════════════════
    SECTION 2 — Enterprise Trust Metrics
