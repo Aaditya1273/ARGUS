@@ -15,7 +15,6 @@ const menuItems = [
   { label: 'Policies',        href: '/policies',         icon: Shield },
   { label: 'Governance',      href: '/governance',       icon: FileCheck },
   { label: 'Plugins',         href: '/plugins',          icon: Zap },
-  { label: 'Replay',          href: '/replay',           icon: CalendarClock },
 ]
 
 import { useSession, signOut } from 'next-auth/react'
