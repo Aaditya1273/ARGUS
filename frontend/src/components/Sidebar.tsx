@@ -54,12 +54,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="h-[72px] flex items-center px-5 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center shadow-sm flex-shrink-0">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
-            </svg>
-          </div>
+          <img src="/LOGO.png" alt="ARGUS Logo" className="h-8 w-auto flex-shrink-0" />
           <span className="text-[17px] font-bold text-gray-900 tracking-tight">ARGUS</span>
         </div>
       </div>

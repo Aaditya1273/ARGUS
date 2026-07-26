@@ -20,8 +20,8 @@ export default function LoginPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <div className="w-14 h-14 rounded-3xl bg-[#FF6B00] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-200/50">
-          <Shield className="w-7 h-7 text-white" />
+        <div className="flex items-center justify-center mx-auto mb-4">
+          <img src="/LOGO.png" alt="ARGUS Logo" className="h-14 w-auto" />
         </div>
         <h2 className="text-2xl font-bold gradient-text tracking-tight">Sign in to ARGUS</h2>
         <p className="mt-2 text-sm text-gray-500">Welcome back. Please select a provider to login.</p>

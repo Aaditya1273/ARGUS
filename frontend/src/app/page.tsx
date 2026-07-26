@@ -82,9 +82,7 @@ function Navigation() {
       <div className="relative mx-auto max-w-7xl">
         <div className="h-14 flex items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-7 h-7 rounded-lg bg-black flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-              <Shield className="w-3.5 h-3.5 text-white" />
-            </div>
+            <img src="/LOGO.png" alt="ARGUS Logo" className="h-7 w-auto transition-transform duration-300 group-hover:scale-105" />
             <span className="text-sm font-bold tracking-tight">ARGUS</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
@@ -155,7 +153,7 @@ function HeroSection() {
 
             {/* Headline - Max width 520px, 900 weight, tight tracking, 32px mb */}
             <h1 className="max-w-[520px] text-[4.5rem] xl:text-[5.5rem] leading-[1.0] font-[900] text-[#0A0A0A] tracking-tighter mb-[32px]">
-              Every AI<br />Tool Call.
+              Every AI<br />Tool Call...
             </h1>
 
             {/* Handwritten words */}
@@ -416,9 +414,7 @@ function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-black flex items-center justify-center">
-              <Shield className="w-3 h-3 text-white" />
-            </div>
+            <img src="/LOGO.png" alt="ARGUS Logo" className="h-6 w-auto" />
             <span className="text-xs font-bold tracking-tight">ARGUS</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-gray-400">
