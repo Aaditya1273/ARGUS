@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Plus, Shield, TrendingUp, AlertTriangle, DollarSign, Activity } from 'lucide-react'
 
 interface Stats {
@@ -61,10 +62,10 @@ export default function CostFirewallPage() {
           <h1 className="text-2xl font-bold text-gray-900">Cost Firewall</h1>
           <p className="text-sm text-gray-500 mt-1">Monitor agent burn rates and enforce budget boundaries in real-time.</p>
         </div>
-        <button className="btn-orange gap-1.5">
+        <Link href="/policies" className="btn-orange gap-1.5 inline-flex items-center">
           <Plus className="w-4 h-4" />
           New Policy
-        </button>
+        </Link>
       </div>
 
       {err && (
@@ -120,7 +121,7 @@ export default function CostFirewallPage() {
               <span className="text-base font-bold text-gray-900">Active Enforcement</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">MCP interceptions are enabled.</p>
-            <button className="btn-orange mt-4 text-xs py-1.5 px-4">View Logs</button>
+            <Link href="/incidents" className="btn-orange mt-4 text-xs py-1.5 px-4 inline-flex">View Logs</Link>
           </div>
           <hr className="border-gray-100" />
           <div>

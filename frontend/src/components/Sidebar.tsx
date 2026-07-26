@@ -22,18 +22,20 @@ import { LogOut } from 'lucide-react'
 
 const generalItems = [
   { label: 'Settings', href: '/settings', icon: Settings },
-  { label: 'Help',     href: '/help',     icon: HelpCircle },
+  { label: 'Help',     href: 'https://github.com/SigNoz/signoz', icon: HelpCircle, external: true },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
 
-  const NavItem = ({ label, href, icon: Icon }: { label: string; href: string; icon: React.ElementType }) => {
-    const active = pathname === href
+  const NavItem = ({ label, href, icon: Icon, external }: { label: string; href: string; icon: React.ElementType; external?: boolean }) => {
+    const active = pathname === href && !external
     return (
       <Link
         href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
           active
             ? 'bg-orange-50 text-orange-700'
