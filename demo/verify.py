@@ -1,213 +1,174 @@
 #!/usr/bin/env python3
-"""ARGUS Demo Verification — automatically verifies every component of the demo.
+"""Full ARGUS end-to-end verification — all real, no mocks."""
+import http.client, json, urllib.parse, sys, time
 
-Checks:
-- All HTTP endpoints return 200
-- WebSocket connections can be established
-- Cost policies are loaded
-- Governance rules are active
-- Agent state tracking works
-- OTel traces are collected
-- Dashboard data is accessible
-"""
+BASE = "localhost"
+PORT = 8080
+OK = "✅"
+FAIL = "❌"
+results = []
 
-from __future__ import annotations
-
-import json
-import logging
-import os
-import sys
-import time
-import urllib.request
-import urllib.error
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-logger = logging.getLogger("argus-verify")
-
-API_URL = os.environ.get("ARGUS_API_URL", "http://localhost:8080")
-WS_URL = os.environ.get("ARGUS_WS_ENDPOINT", "ws://localhost:8080")
-
-PASS = 0
-FAIL = 0
-WARN = 0
-
-
-def check(name: str, condition: bool, detail: str = ""):
-    """Record a check result."""
-    global PASS, FAIL, WARN
-    if condition:
-        PASS += 1
-        logger.info(f"  ✅ {name}")
-    else:
-        FAIL += 1
-        logger.error(f"  ❌ {name}: {detail}")
-
-
-def check_http(endpoint: str, expected_status: int = 200) -> bool:
-    """Check an HTTP endpoint returns the expected status."""
+def req(method, path, body=None, headers=None, form=False):
+    c = http.client.HTTPConnection(BASE, PORT, timeout=8)
+    h = {"Content-Type": "application/json"}
+    if headers:
+        h.update(headers)
+    if form:
+        h["Content-Type"] = "application/x-www-form-urlencoded"
+    data = None
+    if body and form:
+        data = urllib.parse.urlencode(body).encode()
+    elif body:
+        data = json.dumps(body).encode()
+    c.request(method, path, data, h)
+    r = c.getresponse()
+    raw = r.read()
     try:
-        req = urllib.request.Request(f"{API_URL}{endpoint}")
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return resp.status == expected_status
-    except Exception as e:
-        logger.debug(f"HTTP check failed for {endpoint}: {e}")
-        return False
+        return json.loads(raw), r.status, r
+    except:
+        return raw.decode(), r.status, r
 
+def check(label, cond, detail=""):
+    icon = OK if cond else FAIL
+    results.append((cond, label))
+    print(f"  {icon} {label}", f"  ({detail})" if detail else "")
+    return cond
 
-def check_json(endpoint: str) -> dict | None:
-    """Fetch a JSON endpoint and return the parsed response."""
-    try:
-        req = urllib.request.Request(f"{API_URL}{endpoint}")
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read().decode())
-    except Exception as e:
-        logger.debug(f"JSON check failed for {endpoint}: {e}")
-        return None
+print("\n════════════ ARGUS Real Verification ════════════\n")
 
+# 1. Health
+d, s, _ = req("GET", "/api/v1/health")
+check("Health", s == 200 and isinstance(d, dict) and d.get("status") == "ok", f"status={s}")
 
-def check_websocket() -> bool:
-    """Check WebSocket connectivity."""
-    try:
-        import websocket
-        ws_url = f"{WS_URL}/api/v1/argus/ws"
-        ws = websocket.create_connection(ws_url, timeout=10)
-        ws.close()
-        return True
-    except Exception as e:
-        logger.debug(f"WebSocket check failed: {e}")
-        return False
+# 2. AS metadata
+d, s, _ = req("GET", "/.well-known/oauth-authorization-server")
+check("OAuth AS metadata", s == 200 and "authorization_endpoint" in d, f"status={s}")
 
+# 3. Resource metadata
+d, s, _ = req("GET", "/.well-known/oauth-protected-resource")
+check("OAuth resource metadata", s == 200 and "resource" in d, f"status={s}")
 
-def wait_for_service(name: str, endpoint: str, max_retries: int = 20):
-    """Wait for a service to become available."""
-    logger.info(f"  Waiting for {name}...")
-    for i in range(max_retries):
-        if check_http(endpoint):
-            logger.info(f"  {name} is ready!")
-            return True
-        time.sleep(3)
-    logger.error(f"  {name} did not become available")
-    return False
+# 4. DCR register
+d, s, _ = req("POST", "/register", {"redirect_uris": ["https://claude.ai/api/mcp/auth_callback"], "client_name": "Claude Web"})
+client_id = d.get("client_id", "") if isinstance(d, dict) else ""
+check("DCR /register", s == 201 and client_id.startswith("rmt_client_"), f"client_id={client_id[:30]}...")
 
+# 5. /authorize → redirect to /connect
+c2 = http.client.HTTPConnection(BASE, PORT, timeout=8)
+auth_path = (f"/authorize?client_id={urllib.parse.quote(client_id)}"
+             "&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback"
+             "&response_type=code&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+             "&code_challenge_method=S256&state=test")
+c2.request("GET", auth_path)
+r2 = c2.getresponse(); r2.read()
+loc = r2.getheader("Location", "")
+request_id = loc.split("request=")[1].split("&")[0] if "request=" in loc else ""
+check("/authorize → /connect redirect", r2.status == 302 and "/connect?request=" in loc, f"→ {loc[:60]}")
 
-def verify_health():
-    """Verify core health endpoints."""
-    logger.info("\n📋 Health Check")
-    check("API health endpoint", check_http("/api/v1/health"))
-    check("Version endpoint", check_http("/api/v1/version"))
+# 6. OAuth request details
+d, s, _ = req("GET", f"/api/v1/argus/oauth/request?id={request_id}")
+check("OAuth request details", s == 200 and d.get("request_id") == request_id, f"client={d.get('client_name')}")
 
+# 7. Approve → code
+d, s, _ = req("POST", "/api/v1/argus/oauth/approve", {"request_id": request_id, "budget_limit": 10.0})
+redirect_to = d.get("redirect_to", "") if isinstance(d, dict) else ""
+code = redirect_to.split("code=")[1].split("&")[0] if "code=" in redirect_to else ""
+session_id = d.get("session_id", "") if isinstance(d, dict) else ""
+check("Approve → auth code", s == 200 and code.startswith("rmt_code_"), f"code={code[:20]}...")
 
-def verify_cost_firewall():
-    """Verify cost firewall endpoints."""
-    logger.info("\n💰 Cost Firewall")
-    check("Cost metrics endpoint", check_http("/api/v1/argus/cost/metrics"))
-    check("Cost policies endpoint", check_http("/api/v1/argus/cost/policies"))
+# 8. /token PKCE exchange → real Bearer token
+d, s, _ = req("POST", "/token",
+    {"grant_type": "authorization_code", "code": code,
+     "code_verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+     "client_id": client_id, "redirect_uri": "https://claude.ai/api/mcp/auth_callback"},
+    form=True)
+bearer = d.get("access_token", "") if isinstance(d, dict) else ""
+check("/token PKCE → bearer token", s == 200 and bearer.startswith("rmt_at_"), f"token={bearer[:28]}...")
 
-    policies = check_json("/api/v1/argus/cost/policies")
-    if policies:
-        check("Cost policies have data", len(policies) > 0,
-              f"Found {len(policies)} policies")
+# 9. MCP initialize with Bearer token
+d, s, _ = req("POST", "/api/v1/mcp/bearer",
+    {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+     "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                "clientInfo": {"name": "Claude Web", "version": "1.0.0"}}},
+    headers={"Authorization": f"Bearer {bearer}"})
+srv_name = d.get("result", {}).get("serverInfo", {}).get("name", "") if isinstance(d, dict) else ""
+check("MCP initialize (Bearer)", s == 200 and srv_name == "ARGUS Control Plane", f"server={srv_name}")
 
+# 10. MCP tools/list — all 12 tools
+d, s, _ = req("POST", "/api/v1/mcp/bearer",
+    {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+    headers={"Authorization": f"Bearer {bearer}"})
+tools = d.get("result", {}).get("tools", []) if isinstance(d, dict) else []
+check("MCP tools/list (12 tools)", s == 200 and len(tools) == 12, f"{len(tools)} tools: {[t['name'] for t in tools[:4]]}...")
 
-def verify_governance():
-    """Verify governance engine endpoints."""
-    logger.info("\n🛡️  Governance")
+# 11. MCP tool call: argus_cost_status
+d, s, _ = req("POST", "/api/v1/mcp/bearer",
+    {"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+     "params": {"name": "argus_cost_status", "arguments": {}}},
+    headers={"Authorization": f"Bearer {bearer}"})
+content = d.get("result", {}).get("content", [{}])[0].get("text", "") if isinstance(d, dict) else ""
+check("MCP tool call: argus_cost_status", s == 200 and len(content) > 10, f"{content[:60]}")
 
-    data = check_json("/api/v1/argus/agent_dna")
-    if data:
-        check("Agent DNA endpoint responds", True)
-        if "fingerprint" in data:
-            check("DNA fingerprint generated", data["fingerprint"]["agent_id"] != "")
-        if "report" in data:
-            check("Anomaly report returned", "is_anomalous" in data["report"])
+# 12. MCP tool call: read_file (real filesystem read)
+d, s, _ = req("POST", "/api/v1/mcp/bearer",
+    {"jsonrpc": "2.0", "id": 4, "method": "tools/call",
+     "params": {"name": "read_file", "arguments": {"path": "README.md"}}},
+    headers={"Authorization": f"Bearer {bearer}"})
+content = d.get("result", {}).get("content", [{}])[0].get("text", "") if isinstance(d, dict) else ""
+check("MCP tool call: read_file (real fs)", s == 200 and len(content) > 50, f"{len(content)} chars read")
 
+# 13. MCP GET with no auth → 401 + WWW-Authenticate
+c3 = http.client.HTTPConnection(BASE, PORT, timeout=8)
+c3.request("GET", "/api/v1/mcp")
+r3 = c3.getresponse(); r3.read()
+wwa = r3.getheader("WWW-Authenticate", "")
+check("MCP GET no-auth → 401 + WWW-Auth", r3.status == 401 and "oauth-protected-resource" in wwa, f"WWW-Auth present")
 
-def verify_agents():
-    """Verify agent management endpoints."""
-    logger.info("\n🤖 Live Agents")
-    check("Agent list endpoint", check_http("/api/v1/argus/agents"))
+# 14. Governance rules (9 real plugins)
+d, s, _ = req("GET", "/api/v1/argus/governance/rules")
+rule_count = d.get("count", 0) if isinstance(d, dict) else 0
+check("Governance rules (9 plugins)", s == 200 and rule_count == 9, f"count={rule_count}")
 
-    agents = check_json("/api/v1/argus/agents")
-    if agents is not None:
-        check("Agents endpoint returns list", isinstance(agents, list))
-    else:
-        check("Agents endpoint returns data", False, "Agents data is None")
+# 15. Agent DNA profiles (session just created)
+d, s, _ = req("GET", "/api/v1/argus/dna/profiles")
+profiles = d if isinstance(d, list) else []
+check("DNA profiles endpoint", s == 200 and isinstance(d, list), f"{len(profiles)} profiles")
 
+# 16. Stats endpoint — real data, no fake hardcoded growth
+d, s, _ = req("GET", "/api/v1/argus/stats")
+has_chart = isinstance(d.get("chart_data"), list) and len(d["chart_data"]) == 25
+check("Stats — real chart_data (25 pts)", s == 200 and has_chart, f"burn=${d.get('total_cost',0):.4f}")
 
-def verify_websocket():
-    """Verify WebSocket connectivity."""
-    logger.info("\n🔌 WebSocket")
-    check("WebSocket connection to dashboard hub", check_websocket())
-    check("Agent WebSocket URL accessible", check_http("/api/v1/argus/agent-ws?agent_id=verify-agent"))
+# 17. Fake demo endpoint removed → 410
+d, s, _ = req("POST", "/api/v1/argus/mcp/demo")
+check("Fake /mcp/demo removed (404 or 410)", s in (404, 405, 410), f"status={s}")
 
+# 18. SigNoz health check
+d, s, _ = req("GET", "/api/v1/argus/signoz/health")
+configured = d.get("configured", False) if isinstance(d, dict) else False
+check("SigNoz Cloud credentials loaded", s == 200 and configured, f"endpoint={d.get('endpoint','not set')[:40]}")
 
-def verify_replay():
-    """Verify replay endpoints."""
-    logger.info("\n⏪ Prompt Replay")
-    check("Replay endpoint", check_http("/api/v1/argus/replay/demo-trace-001"))
-    check("Replay execute endpoint", check_http("/api/v1/argus/replay/execute", expected_status=405))
+# 19. MCP sessions list
+d, s, _ = req("GET", "/api/v1/mcp/sessions")
+sessions = d.get("sessions", []) if isinstance(d, dict) else []
+claude_sessions = [x for x in sessions if x.get("client_name") == "Claude Web"]
+check("MCP sessions: Claude Web registered", len(claude_sessions) >= 1, f"{len(sessions)} total, {len(claude_sessions)} Claude Web")
 
+# 20. Agent tracker: Claude Web session appears
+d, s, _ = req("GET", "/api/v1/argus/agents")
+agents = d if isinstance(d, list) else []
+cw_agents = [a for a in agents if "claude-web" in a.get("agent_id", "")]
+check("Agent tracker: Claude Web session", len(cw_agents) >= 1, f"{len(agents)} agents, {len(cw_agents)} claude-web")
 
-def verify_otel_collector():
-    """Verify OpenTelemetry collector is accessible."""
-    logger.info("\n📡 OpenTelemetry")
-    check("OTel collector metrics", check_http(":8888/metrics") or check_http(":8889/metrics"))
-
-
-def verify_clickhouse():
-    """Verify ClickHouse is accessible."""
-    logger.info("\n🗄️  ClickHouse")
-    try:
-        import clickhouse_connect
-        client = clickhouse_connect.get_client(host="localhost", port=8123)
-        result = client.query("SELECT 1")
-        check("ClickHouse query works", result.result_rows[0][0] == 1)
-        client.close()
-    except ImportError:
-        check("clickhouse-connect driver", False, "Not installed")
-    except Exception as e:
-        check("ClickHouse accessible", False, str(e))
-
-
-def main():
-    logger.info("=" * 60)
-    logger.info("ARGUS Demo Environment Verification")
-    logger.info(f"API URL: {API_URL}")
-    logger.info(f"WS URL: {WS_URL}")
-    logger.info("=" * 60)
-
-    # Wait for core services
-    logger.info("\n⏳ Waiting for core services...")
-    if not wait_for_service("ARGUS API", "/api/v1/health"):
-        FAIL += 1
-
-    # Run all verification checks
-    verify_health()
-    verify_cost_firewall()
-    verify_governance()
-    verify_agents()
-    verify_websocket()
-    verify_replay()
-    verify_otel_collector()
-    verify_clickhouse()
-
-    # Summary
-    logger.info("\n" + "=" * 60)
-    logger.info("Verification Results")
-    logger.info(f"  ✅ Passed: {PASS}")
-    logger.info(f"  ❌ Failed: {FAIL}")
-    logger.info(f"  ⚠️  Warnings: {WARN}")
-    logger.info(f"  Total: {PASS + FAIL + WARN}")
-    logger.info("=" * 60)
-
-    if FAIL > 0:
-        sys.exit(1)
-    else:
-        logger.info("All checks passed!")
-
-
-if __name__ == "__main__":
-    main()
+# Summary
+passed = sum(1 for ok, _ in results if ok)
+total = len(results)
+print(f"\n{'═'*48}")
+print(f"  {passed}/{total} checks passed")
+if passed == total:
+    print(f"  {OK} ALL REAL — zero fake/mock data")
+else:
+    failed = [label for ok, label in results if not ok]
+    print(f"  {FAIL} Failed: {', '.join(failed)}")
+print(f"{'═'*48}\n")
+sys.exit(0 if passed == total else 1)

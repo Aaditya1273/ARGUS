@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "signoz": {
-      "url": "https://not-setup/mcp"
+      "url": "https://mcp.in2.signoz.cloud/mcp"
     }
   }
 }

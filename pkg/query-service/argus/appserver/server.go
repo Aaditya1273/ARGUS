@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -23,6 +24,7 @@ import (
 	"github.com/SigNoz/signoz/pkg/query-service/argus/investigation"
 	"github.com/SigNoz/signoz/pkg/query-service/argus/mcp"
 	argusOAuth "github.com/SigNoz/signoz/pkg/query-service/argus/oauth"
+	"github.com/SigNoz/signoz/pkg/query-service/argus/telemetry"
 	"github.com/SigNoz/signoz/pkg/query-service/argus/replay"
 	"github.com/SigNoz/signoz/pkg/query-service/argus/state"
 	"github.com/SigNoz/signoz/pkg/query-service/interfaces"
@@ -58,6 +60,35 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 	costTracker := cost.NewCostTracker()
 	policyEngine := cost.NewPolicyEngine(logger, costTracker)
 	dnaDetector := dna.NewAnomalyDetector()
+
+	// burnHistory records the actual cost firewall burn value at each 5-minute mark.
+	// This gives the chart real monotonic data instead of fake linear growth.
+	const burnHistoryLen = 25
+	burnHistory := make([]float64, burnHistoryLen)
+	burnLabels := make([]string, burnHistoryLen)
+	burnMu := &sync.Mutex{}
+
+	// Pre-fill labels for the last 25 × 5-minute windows
+	now0 := time.Now()
+	for i := 0; i < burnHistoryLen; i++ {
+		t := now0.Add(time.Duration(-(burnHistoryLen-1-i)*5) * time.Minute)
+		burnLabels[i] = t.Format("15:04")
+		burnHistory[i] = 0
+	}
+
+	// Tick every 5 minutes: shift the window and record the real current burn
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			burnMu.Lock()
+			copy(burnHistory[:burnHistoryLen-1], burnHistory[1:])
+			burnHistory[burnHistoryLen-1] = costFirewall.CurrentBurn
+			copy(burnLabels[:burnHistoryLen-1], burnLabels[1:])
+			burnLabels[burnHistoryLen-1] = time.Now().Format("15:04")
+			burnMu.Unlock()
+		}
+	}()
 
 	// --- Trace Store (ClickHouse-backed when available) ---
 	var traceStore replay.TraceStore
@@ -106,7 +137,7 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 		logger.WarnContext(context.Background(), "argus: no telemetry store provided, using in-memory fallback")
 	}
 
-	llmClient := &replay.NoopLLMClient{}
+	llmClient := replay.NewLLMClient()
 	replayEngine := replay.NewReplayEngine(traceStore, llmClient)
 	differ := replay.NewDiffer()
 
@@ -118,17 +149,6 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 	oauthStore := argusOAuth.NewStore()
 	// onTokenMinted is set after mcpServer is created (needs mcpServer reference)
 	var onTokenMinted func(sessionID string, budget float64, clientName string)
-
-	if os.Getenv("ARGUS_DEMO_MODE") != "" {
-		agentTracker.UpsertAgent(&state.AgentState{
-			AgentID: "sales-bot-01", Status: state.StatusRunning,
-			CurrentCost: 0.05, CurrentTokens: 1200, LatencyMs: 150, LastTool: "search",
-		})
-		agentTracker.UpsertAgent(&state.AgentState{
-			AgentID: "support-bot-x", Status: state.StatusBlocked,
-			CurrentCost: 5.12, CurrentTokens: 8500, LatencyMs: 3400, LastTool: "database_query",
-		})
-	}
 
 	r := mux.NewRouter()
 
@@ -185,24 +205,15 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 			})
 		}
 
-		// Build cost chart — last 25 data points at 5-minute intervals,
-		// last point is always the real current burn.
-		data := make([]float64, 25)
-		labels := make([]string, 25)
-		now := time.Now()
-		base := costFirewall.CurrentBurn
-		if base < 0.5 {
-			base = 0.5
-		}
-		for i := 24; i >= 0; i-- {
-			t := now.Add(time.Duration(-i*5) * time.Minute)
-			labels[24-i] = t.Format("15:04")
-			if i == 0 {
-				data[24] = costFirewall.CurrentBurn
-			} else {
-				data[24-i] = base * float64(25-i) / 25.0
-			}
-		}
+		// Build cost chart from real burnHistory (updated every 5 minutes by the background ticker).
+		// The last slot always reflects the current live burn.
+		burnMu.Lock()
+		data := make([]float64, burnHistoryLen)
+		labels := make([]string, burnHistoryLen)
+		copy(data, burnHistory)
+		copy(labels, burnLabels)
+		data[burnHistoryLen-1] = costFirewall.CurrentBurn // always show live value as last point
+		burnMu.Unlock()
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -777,6 +788,8 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 			},
 			"timestamp": time.Now(),
 		})
+		// Emit real span → SigNoz proof of OAuth connection
+		telemetry.RecordSessionConnect(context.Background(), sessionID, clientName, budget)
 		logger.InfoContext(context.Background(), "argus oauth: Claude Web session activated",
 			slog.String("session_id", sessionID),
 			slog.Float64("budget", budget),
@@ -785,27 +798,44 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 	}
 
 	// Wire the cost firewall: every MCP tool call reports cost to ARGUS
-	mcpServer.Core().SetCostCallback(func(agentID string, cost float64, tool string) {
-		costFirewall.CurrentBurn += cost
+	mcpServer.Core().SetCostCallback(func(agentID string, toolCost float64, tool string) {
+		costFirewall.CurrentBurn += toolCost
 		agentTracker.UpsertAgent(&state.AgentState{
-			AgentID: agentID, Status: state.StatusRunning,
-			CurrentCost: costFirewall.CurrentBurn, CurrentTokens: 0,
-			LatencyMs: 0, LastTool: tool,
+			AgentID:     agentID,
+			Status:      state.StatusRunning,
+			CurrentCost: costFirewall.CurrentBurn,
+			CurrentTokens: 0,
+			LatencyMs:   0,
+			LastTool:    tool,
 		})
 		logger.InfoContext(context.Background(), "argus mcp: tool call cost tracked",
 			slog.String("agent", agentID),
 			slog.String("tool", tool),
-			slog.Float64("cost", cost),
+			slog.Float64("cost", toolCost),
 			slog.Float64("total_burn", costFirewall.CurrentBurn),
 			slog.Float64("budget", costFirewall.BudgetLimit),
 		)
+
+		// Emit real OTel span → ships to SigNoz Cloud
+		telemetry.RecordMCPToolCall(context.Background(), agentID, tool, toolCost, costFirewall.CurrentBurn)
+
+		// Save a TraceContext so the Replay engine has real data to work with.
+		// TraceID = sessionID so the user can pass the session ID to /replay/{id}.
+		_ = traceStore.SaveTrace(context.Background(), &replay.TraceContext{
+			TraceID:        agentID,
+			OriginalPrompt: "Tool call: " + tool,
+			Model:          "gpt-4o-mini",
+			Tools:          []string{tool},
+			LatencyMs:      0,
+			Cost:           costFirewall.CurrentBurn,
+		})
 
 		// Broadcast via WebSocket so the frontend updates in real-time
 		wsHub.BroadcastMessage(map[string]interface{}{
 			"type":      "MCP_TOOL_CALL",
 			"agent_id":  agentID,
 			"tool":      tool,
-			"cost":      cost,
+			"cost":      toolCost,
 			"total":     costFirewall.CurrentBurn,
 			"budget":    costFirewall.BudgetLimit,
 			"timestamp": time.Now(),
@@ -883,164 +913,6 @@ func NewServer(addr string, telemetryStore telemetrystore.TelemetryStore, reader
 		slog.String("register", "/register"),
 		slog.String("discovery", "/.well-known/oauth-authorization-server"),
 	)
-
-	// --- MCP Demo Endpoint: Launches a real-time simulated Claude session ---
-	// When the frontend clicks "Connect Claude", this endpoint creates a live
-	// demo session that makes simulated tool calls every 1-2 seconds.
-	// Each call accrues cost, streams via WebSocket, and eventually hits the
-	// budget limit — triggering the "Blocked by ARGUS Firewall" state.
-	api.HandleFunc("/argus/mcp/demo", func(w http.ResponseWriter, r *http.Request) {
-		sessionID := "claude-demo-" + strconv.FormatInt(time.Now().UnixMilli(), 36)
-
-		// Register the demo session in MCP
-		mcpServer.Core().GetClients()[sessionID] = &mcp.ClientSession{
-			ID:          sessionID,
-			ClientName:  "Claude Desktop",
-			ClientVersion: "1.0.0",
-			ConnectedAt: time.Now(),
-			TotalCost:   0,
-			ToolCallCount: 0,
-			BudgetLimit: 5.0,
-			Blocked:     false,
-		}
-
-		logger.InfoContext(r.Context(), "argus mcp: starting demo session",
-			slog.String("session_id", sessionID),
-			slog.Float64("budget", 5.0),
-		)
-
-		// Broadcast session created event
-		wsHub.BroadcastMessage(map[string]interface{}{
-			"type": "MCP_EVENT",
-			"event": "mcp_client_connecting",
-			"data": map[string]interface{}{
-				"client_id":        sessionID,
-				"client_name":      "Claude Desktop",
-				"connected_at":     time.Now(),
-				"budget_limit":     5.0,
-			},
-			"timestamp": time.Now(),
-		})
-
-		// Simulate approval after 1 second
-		go func() {
-			time.Sleep(1 * time.Second)
-				if session, ok := mcpServer.Core().GetClients()[sessionID]; ok {
-					session.Blocked = false
-				}
-			wsHub.BroadcastMessage(map[string]interface{}{
-				"type": "MCP_EVENT",
-				"event": "mcp_client_approved",
-				"data": map[string]interface{}{
-					"client_id": sessionID,
-				},
-				"timestamp": time.Now(),
-			})
-
-			// Start making tool calls
-			demoTools := []string{
-				"read_file",
-				"search_code",
-				"list_directory",
-				"analyze_codebase",
-				"search_code",
-				"read_file",
-				"run_command",
-				"signoz_get_services",
-				"run_command",
-				"search_code",
-				"read_file",
-				"analyze_codebase",
-				"signoz_list_alerts",
-				"search_code",
-				"run_command",
-				"read_file",
-				"signoz_query_traces",
-				"argus_agent_dna",
-				"argus_cost_status",
-				"read_file",
-			}
-
-			for i, tool := range demoTools {
-				// Check if session is still active
-				s, ok := mcpServer.Core().GetClients()[sessionID]
-				if !ok || s.Blocked {
-					return
-				}
-
-				toolCost := mcp.ToolCost(tool)
-				s.TotalCost += toolCost
-				s.ToolCallCount++
-
-				// Update cost firewall
-				costFirewall.CurrentBurn += toolCost
-
-				// Update agent tracker
-				agentTracker.UpsertAgent(&state.AgentState{
-					AgentID: sessionID, Status: state.StatusRunning,
-					CurrentCost: costFirewall.CurrentBurn,
-					CurrentTokens: int(float64(i+1) * 500),
-					LatencyMs:    int64(100 + i*20),
-					LastTool:     tool,
-				})
-
-				// Broadcast MCP tool call event
-				wsHub.BroadcastMessage(map[string]interface{}{
-					"type":      "MCP_TOOL_CALL",
-					"agent_id":  sessionID,
-					"agent_name": "Claude Desktop",
-					"tool":      tool,
-					"tool_index": i + 1,
-					"cost":      toolCost,
-					"total":     costFirewall.CurrentBurn,
-					"budget":    5.0,
-					"tokens":    (i + 1) * 500,
-					"latency_ms": 100 + i*20,
-					"timestamp": time.Now(),
-				})
-
-				logger.InfoContext(r.Context(), "argus mcp demo: tool call",
-					slog.String("session", sessionID),
-					slog.String("tool", tool),
-					slog.Int("call", i+1),
-					slog.Float64("cost", toolCost),
-					slog.Float64("total", costFirewall.CurrentBurn),
-				)
-
-				// Check if budget exceeded
-				if costFirewall.CurrentBurn >= 5.0 && s.Blocked == false {
-					s.Blocked = true
-					wsHub.BroadcastMessage(map[string]interface{}{
-						"type": "MCP_EVENT",
-						"event": "mcp_budget_exceeded",
-						"data": map[string]interface{}{
-							"client_id": sessionID,
-							"total":     costFirewall.CurrentBurn,
-							"budget":    5.0,
-						},
-						"timestamp": time.Now(),
-					})
-
-					logger.WarnContext(r.Context(), "argus mcp demo: budget exceeded — session blocked",
-						slog.String("session", sessionID),
-						slog.Float64("total", costFirewall.CurrentBurn),
-					)
-					return
-				}
-
-				// Wait before next tool call (varying delays for realism)
-				delay := 800 + (i % 3) * 400
-				time.Sleep(time.Duration(delay) * time.Millisecond)
-			}
-		}()
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":     "started",
-			"session_id": sessionID,
-			"message":    "Claude Desktop demo session started. Watch tool calls stream in real-time!",
-		})
-	}).Methods("POST")
 
 	logger.InfoContext(context.Background(), "argus: MCP server initialized",
 		slog.String("endpoint", "/api/v1/mcp"),

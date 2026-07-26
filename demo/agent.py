@@ -49,9 +49,9 @@ class DemoAgent:
 
         # Initialize ARGUS SDK
         argus.init(
-            project_name=agent_id,
-            endpoint=os.environ.get("ARGUS_OTLP_ENDPOINT", "http://localhost:4317"),
-            budget_limit=float(os.environ.get("ARGUS_BUDGET_LIMIT", "10.0")),
+            agent_id=agent_id,
+            telemetry_endpoint=os.environ.get("ARGUS_OTLP_ENDPOINT", "http://localhost:4318"),
+            control_plane_url=f"ws://{os.environ.get('ARGUS_WS_HOST', 'localhost:8080')}/api/v1/argus/agent-ws",
         )
 
         logger.info(f"Demo Agent '{agent_id}' initialized (session: {self.session_id})")

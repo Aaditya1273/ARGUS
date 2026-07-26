@@ -1,201 +1,181 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import Image from 'next/image'
-import { CostChart } from '@/components/Charts/CostChart'
-import { Shield, Plus, Upload } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Plus, Shield, TrendingUp, AlertTriangle, DollarSign, Activity } from 'lucide-react'
 
-export default function CostFirewall() {
-  const [stats, setStats] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+interface Stats {
+  total_cost: number
+  current_burn_rate: number
+  daily_total: number
+  blocked_requests: number
+  active_policies: number
+  active_policies_list: { name: string; limit: string; action: string; status: string }[]
+  chart_data: number[]
+  chart_labels: string[]
+}
+
+// Tiny sparkline — pure SVG, no deps
+function Sparkline({ data, color = '#ea580c', height = 64 }: { data: number[]; color?: string; height?: number }) {
+  if (!data || data.length < 2) return <div style={{ height }} className="flex items-center justify-center text-xs text-gray-400">No data</div>
+  const max = Math.max(...data, 0.001)
+  const w = 400, h = height
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * (h * 0.85) - h * 0.05}`)
+  const area = `M${pts.join('L')}L${w},${h}L0,${h}Z`
+  const line = `M${pts.join('L')}`
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }}>
+      <defs>
+        <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity=".18" />
+          <stop offset="100%" stopColor={color} stopOpacity=".01" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#sg)" />
+      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export default function CostFirewallPage() {
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [err, setErr]     = useState(false)
 
   useEffect(() => {
-    fetch('/api/argus/stats')
-      .then(res => res.json())
-      .then(data => {
-        setStats(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error('Error fetching stats:', err)
-        setLoading(false)
-      })
+    const load = () => fetch('/api/argus/stats').then(r => r.json()).then(setStats).catch(() => setErr(true))
+    load()
+    const t = setInterval(load, 5000)
+    return () => clearInterval(t)
   }, [])
 
-  if (loading || !stats) {
-    return <div className="p-8 text-gray-500">Loading Cost Firewall...</div>
-  }
-
-  // Use the real data from the Go backend, default to 0 if not present
-  const currentBurn = stats.current_burn_rate || 0
-  const dailyTotal = stats.daily_total || 0
-  const blockedReqs = stats.blocked_requests || 0
-  const activePolicies = stats.active_policies || []
-
-  // Ensure chart data is an array
-  const chartData = stats.chart_data || [0,0,0,0,0,0,0]
-  const chartLabels = stats.chart_labels || ['MON','TUE','WED','THU','FRI','SAT','SUN']
-
-  // Ensure chartData length matches chartLabels length
-  const displayData = chartData.slice(-7)
-  const displayLabels = chartLabels.slice(-7)
-  
-  // Calculate max for bar height scaling
-  const maxVal = Math.max(...displayData, 1) // prevent div by zero
+  const burn = stats?.total_cost ?? 0
+  const blocked = stats?.blocked_requests ?? 0
+  const policies = stats?.active_policies ?? 0
+  const policyList = stats?.active_policies_list ?? []
 
   return (
-    <div className="flex flex-col h-full bg-[#f8f9fa]">
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          
-          {/* Header Row */}
-          <div className="flex items-end justify-between mb-8">
+    <div className="p-8 max-w-6xl mx-auto animate-fadeIn">
+
+      {/* Page header */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Cost Firewall</h1>
+          <p className="text-sm text-gray-500 mt-1">Monitor agent burn rates and enforce budget boundaries in real-time.</p>
+        </div>
+        <button className="btn-orange gap-1.5">
+          <Plus className="w-4 h-4" />
+          New Policy
+        </button>
+      </div>
+
+      {err && (
+        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 text-sm">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Backend offline — start the Go server on :8080
+        </div>
+      )}
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {/* Orange highlight card */}
+        <div className="stat-card orange">
+          <p className="text-sm text-orange-100 font-medium mb-1">Current Burn Rate</p>
+          <p className="text-3xl font-bold tracking-tight">${burn.toFixed(2)}<span className="text-lg font-normal text-orange-200">/hr</span></p>
+          <p className="text-xs text-orange-200 mt-2">Active across all agents</p>
+        </div>
+        {[
+          { label: 'Daily Total',      value: `$${(stats?.daily_total ?? 0).toFixed(2)}`, icon: DollarSign },
+          { label: 'Blocked Requests', value: String(blocked),                            icon: AlertTriangle },
+          { label: 'Active Policies',  value: String(policies),                           icon: Shield },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <p className="text-xs text-gray-500 font-medium mb-1">{s.label}</p>
+            <p className="text-3xl font-bold text-gray-900">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart + Firewall Status */}
+      <div className="grid grid-cols-3 gap-5 mb-5">
+        <div className="col-span-2 card p-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">Cost Trajectory</h2>
+          {stats?.chart_data ? (
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Cost Firewall</h1>
-              <p className="text-gray-500 mt-1">Monitor agent burn rates and enforce budget boundaries in real-time.</p>
+              <Sparkline data={stats.chart_data} />
+              <div className="flex justify-between mt-2">
+                {(stats.chart_labels ?? []).filter((_, i, a) => i % Math.floor(a.length / 7) === 0).map(l => (
+                  <span key={l} className="text-[11px] text-gray-400">{l}</span>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-[#ea580c] text-white rounded-full text-sm font-medium hover:bg-[#c2410c] transition-colors shadow-sm">
-                <Plus className="w-4 h-4" />
-                New Policy
-              </button>
+          ) : (
+            <div className="h-24 flex items-center justify-center text-sm text-gray-400">Loading…</div>
+          )}
+        </div>
+
+        <div className="card p-6 flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Firewall Status</p>
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-orange-600" />
+              <span className="text-base font-bold text-gray-900">Active Enforcement</span>
             </div>
+            <p className="text-xs text-gray-500 mt-1">MCP interceptions are enabled.</p>
+            <button className="btn-orange mt-4 text-xs py-1.5 px-4">View Logs</button>
           </div>
-
-          {/* Metric Cards Row */}
-          <div className="grid grid-cols-4 gap-6">
-            <div className="bg-gradient-to-br from-[#f97316] to-[#c2410c] rounded-3xl p-6 text-white shadow-md relative overflow-hidden">
-              <p className="text-sm font-medium text-orange-100">Current Burn Rate</p>
-              <p className="text-4xl font-bold mt-2">${currentBurn.toFixed(2)}/hr</p>
-              <p className="text-xs text-orange-200 mt-4">Active across all agents</p>
-            </div>
-            
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-              <p className="text-sm font-medium text-gray-500">Daily Total</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">${dailyTotal.toFixed(2)}</p>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-              <p className="text-sm font-medium text-gray-500">Blocked Requests</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">{blockedReqs}</p>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-              <p className="text-sm font-medium text-gray-500">Active Policies</p>
-              <p className="text-4xl font-bold text-gray-900 mt-2">{activePolicies.length}</p>
-            </div>
-          </div>
-
-          {/* Middle Row: Analytics & Reminders/Collaborators */}
-          <div className="grid grid-cols-12 gap-6">
-            
-            {/* Project Analytics -> Cost Trajectory */}
-            <div className="col-span-7 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 h-96 flex flex-col">
-              <h2 className="text-lg font-bold text-gray-900 mb-6">Cost Trajectory</h2>
-              <div className="flex-1 flex items-end justify-between px-4 pb-2">
-                {displayData.map((val: number, i: number) => {
-                  const heightPercent = (val / maxVal) * 100
-                  return (
-                    <div key={i} className="flex flex-col items-center gap-4 h-full justify-end w-full">
-                      <div 
-                        className={`w-12 rounded-t-lg transition-all ${i === displayData.length - 1 ? 'bg-[#ea580c]' : 'bg-[#fdba74]'}`} 
-                        style={{ height: `${heightPercent}%`, minHeight: '4px' }}
-                      />
-                      <span className="text-xs font-bold text-gray-400">
-                        {displayLabels[i] || ''}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="col-span-5 grid grid-rows-2 gap-6 h-96">
-              {/* Reminders -> Shield Status */}
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-center">
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Firewall Status</p>
-                <div className="flex items-center gap-3 mb-4">
-                  <Shield className="w-8 h-8 text-[#ea580c]" />
-                  <h3 className="text-xl font-bold text-gray-900">Active Enforcement</h3>
+          <hr className="border-gray-100" />
+          <div>
+            <p className="text-xs font-semibold text-gray-700 mb-2">Enforced Policies</p>
+            {policyList.length === 0
+              ? <p className="text-xs text-gray-400">No active policies.</p>
+              : policyList.slice(0, 3).map(p => (
+                <div key={p.name} className="flex items-center justify-between py-1">
+                  <span className="text-xs text-gray-600 truncate">{p.name}</span>
+                  <span className="pill pill-orange text-[10px]">{p.action}</span>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">MCP interceptions are enabled.</p>
-                <button className="self-start px-6 py-2 bg-[#ea580c] text-white rounded-full text-sm font-medium hover:bg-[#c2410c] transition-colors">
-                  View Logs
-                </button>
-              </div>
-
-              {/* Top Collaborators -> Active Policies */}
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-center overflow-hidden">
-                <p className="text-sm font-bold text-gray-900 mb-4">Enforced Policies</p>
-                <div className="space-y-3 overflow-y-auto max-h-full pr-2">
-                  {activePolicies.length > 0 ? (
-                    activePolicies.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center border border-orange-100">
-                          <span className="text-xs">🛡️</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 leading-tight">{p.name || 'Policy'}</p>
-                          <p className="text-xs text-gray-400">Limit: {p.limit} - {p.action}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No active policies.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Row: Gauge & Time Tracker */}
-          <div className="grid grid-cols-12 gap-6">
-            
-            {/* Project Progress Gauge -> Budget Usage */}
-            <div className="col-span-4 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center justify-center h-64">
-              <div className="w-full flex justify-between items-center mb-4">
-                <p className="text-sm font-bold text-gray-900">Budget Usage</p>
-                <p className="text-sm font-bold text-gray-900">Daily Global</p>
-              </div>
-              <div className="relative w-40 h-20 overflow-hidden mb-6">
-                {/* CSS Half Circle Gauge */}
-                <div className="absolute inset-0 border-[16px] border-[#fdba74] rounded-t-full border-b-0 opacity-40"></div>
-                <div className="absolute inset-0 border-[16px] border-[#ea580c] rounded-t-full border-b-0 origin-bottom transition-all duration-1000" style={{ transform: `rotate(${-90 + Math.min((dailyTotal / 500) * 180, 180)}deg)` }}></div>
-                <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
-                  <span className="text-xl font-bold text-gray-900 leading-none">{Math.round((dailyTotal / 500) * 100)}%</span>
-                  <span className="text-[10px] text-gray-500 font-medium">Consumed</span>
-                </div>
-              </div>
-              <button className="px-6 py-2 bg-white border-2 border-gray-200 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-50 transition-colors w-full">
-                Adjust Limits
-              </button>
-            </div>
-
-            {/* Time Tracker -> Active Agent Session */}
-            <div className="col-span-8 rounded-3xl overflow-hidden relative shadow-md h-64 bg-gray-900 border border-gray-800">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-orange-950 opacity-90"></div>
-              
-              <div className="absolute inset-0 p-8 flex flex-col justify-between">
-                <p className="text-sm font-bold text-orange-50 tracking-wider">Active Agent Session</p>
-                <div className="flex justify-between items-end">
-                  <h2 className="text-6xl font-bold text-white tracking-tight tabular-nums drop-shadow-md">
-                    00:45:12
-                  </h2>
-                  <div className="flex gap-4">
-                    <button className="px-8 py-2.5 rounded-full border border-white/40 text-white font-medium hover:bg-white/10 backdrop-blur-sm transition-all shadow-sm">
-                      Audit
-                    </button>
-                    <button className="px-8 py-2.5 rounded-full border border-white/40 text-white font-medium hover:bg-white/10 backdrop-blur-sm transition-all shadow-sm bg-red-500/20 hover:bg-red-500/40 border-red-500/50">
-                      Kill Task
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+              ))
+            }
           </div>
         </div>
       </div>
+
+      {/* Budget usage + Active session */}
+      <div className="grid grid-cols-2 gap-5">
+        <div className="card p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-semibold text-gray-700">Budget Usage</h3>
+            <span className="text-xs text-gray-400">Daily Global</span>
+          </div>
+          {/* Donut */}
+          <div className="flex items-center gap-6">
+            <div className="relative w-24 h-24 flex-shrink-0">
+              <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f0f0f0" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ea580c" strokeWidth="3"
+                  strokeDasharray={`${Math.min((burn / 100) * 100, 100)} 100`} strokeLinecap="round" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-sm font-bold text-gray-900">{((burn / 100) * 100).toFixed(0)}%</span>
+                <span className="text-[10px] text-gray-500">Consumed</span>
+              </div>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div><span className="text-gray-500">Used</span><span className="ml-2 font-semibold text-gray-900">${burn.toFixed(2)}</span></div>
+              <div><span className="text-gray-500">Limit</span><span className="ml-2 font-semibold text-gray-900">$100.00</span></div>
+              <div><span className="text-gray-500">Remaining</span><span className="ml-2 font-semibold text-gray-900">${(100 - burn).toFixed(2)}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', border: 'none' }}>
+          <h3 className="text-sm font-semibold text-white mb-3">Active Agent Session</h3>
+          <p className="text-xs text-gray-400 mb-4">Connect Claude to ARGUS MCP to see live session data.</p>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+            <span className="text-xs text-orange-300">Watching for connections…</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }

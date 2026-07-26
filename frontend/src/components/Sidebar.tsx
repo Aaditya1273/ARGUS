@@ -1,93 +1,76 @@
 'use client'
 
-import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  Calendar, 
-  BarChart3, 
-  Users,
-  Settings, 
-  HelpCircle,
-  Activity,
-  AlertTriangle,
-  Shield,
-  FileCheck,
-  Zap
+import {
+  LayoutDashboard, Activity, BarChart3, AlertTriangle,
+  Shield, FileCheck, Zap, CalendarClock, Settings, HelpCircle,
 } from 'lucide-react'
 
-const navItems = [
-  { name: 'Cost Firewall', href: '/cost-firewall', icon: LayoutDashboard },
-  { name: 'Mission Control', href: '/mission-control', icon: Activity },
-  { name: 'Agent DNA', href: '/agent-dna', icon: BarChart3 },
-  { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
-  { name: 'Policies', href: '/policies', icon: Shield },
-  { name: 'Governance', href: '/governance', icon: FileCheck },
-  { name: 'Plugins', href: '/plugins', icon: Zap },
-  { name: 'Replay', href: '/replay', icon: Calendar },
+const menuItems = [
+  { label: 'Cost Firewall',   href: '/cost-firewall',    icon: LayoutDashboard },
+  { label: 'Mission Control', href: '/mission-control',  icon: Activity },
+  { label: 'Agent DNA',       href: '/agent-dna',        icon: BarChart3 },
+  { label: 'Incidents',       href: '/incidents',        icon: AlertTriangle },
+  { label: 'Policies',        href: '/policies',         icon: Shield },
+  { label: 'Governance',      href: '/governance',       icon: FileCheck },
+  { label: 'Plugins',         href: '/plugins',          icon: Zap },
+  { label: 'Replay',          href: '/replay',           icon: CalendarClock },
+]
+
+const generalItems = [
+  { label: 'Settings', href: '/settings', icon: Settings },
+  { label: 'Help',     href: '/help',     icon: HelpCircle },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
 
+  const NavItem = ({ label, href, icon: Icon }: { label: string; href: string; icon: React.ElementType }) => {
+    const active = pathname === href
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+          active
+            ? 'bg-orange-50 text-orange-700'
+            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+        }`}
+      >
+        <Icon
+          className={`w-[18px] h-[18px] flex-shrink-0 ${active ? 'text-orange-600' : 'text-gray-400'}`}
+          strokeWidth={active ? 2.5 : 2}
+        />
+        {label}
+      </Link>
+    )
+  }
+
   return (
-    <div className="w-64 bg-[#f8f9fa] border-r border-gray-200 flex flex-col h-full shrink-0">
-      <div className="h-20 flex items-center px-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center shadow-sm">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <aside className="w-60 bg-[#f8f9fa] border-r border-gray-200 flex flex-col h-full shrink-0 select-none">
+      {/* Logo */}
+      <div className="h-[72px] flex items-center px-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center shadow-sm flex-shrink-0">
+            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
             </svg>
           </div>
-          <span className="text-xl font-bold text-gray-800 tracking-tight">ARGUS</span>
+          <span className="text-[17px] font-bold text-gray-900 tracking-tight">ARGUS</span>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 px-2">
-          Menu
-        </div>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'text-orange-700 bg-orange-50/50'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className={`w-5 h-5 ${isActive ? 'text-orange-600' : 'text-gray-400'}`} strokeWidth={isActive ? 2.5 : 2} />
-              {item.name}
-            </Link>
-          )
-        })}
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">Menu</p>
+        {menuItems.map(item => <NavItem key={item.href} {...item} />)}
 
-        <div className="mt-8 mb-4">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2">
-            General
-          </div>
+        <div className="pt-5 pb-2">
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">General</p>
         </div>
-
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-        >
-          <Settings className="w-5 h-5 text-gray-400" strokeWidth={2} />
-          Settings
-        </Link>
-        <Link
-          href="/help"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-        >
-          <HelpCircle className="w-5 h-5 text-gray-400" strokeWidth={2} />
-          Help
-        </Link>
+        {generalItems.map(item => <NavItem key={item.href} {...item} />)}
       </nav>
-    </div>
+    </aside>
   )
 }

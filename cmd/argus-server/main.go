@@ -14,7 +14,56 @@ import (
 	"github.com/SigNoz/signoz/pkg/query-service/argus/appserver"
 	"github.com/SigNoz/signoz/pkg/query-service/interfaces"
 	"github.com/SigNoz/signoz/pkg/telemetrystore"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
+
+// initTracer bootstraps the OpenTelemetry TracerProvider and ships spans to SigNoz Cloud.
+// Returns a shutdown function that must be deferred by the caller.
+func initTracer(ctx context.Context, endpoint, ingestionKey string) (func(context.Context) error, error) {
+	// SigNoz Cloud expects the ingestion key as an HTTP header on the OTLP endpoint.
+	// endpoint = "https://ingest.in2.signoz.cloud"   (no /v1/traces suffix — added by the exporter)
+	// header  = "signoz-ingestion-key: <key>"
+	opts := []otlptracehttp.Option{
+		otlptracehttp.WithEndpointURL(endpoint),
+		otlptracehttp.WithHeaders(map[string]string{
+			"signoz-ingestion-key": ingestionKey,
+		}),
+	}
+
+	exporter, err := otlptracehttp.New(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("argus-control-plane"),
+		semconv.ServiceVersion("1.0.0"),
+		attribute.String("deployment.environment", "production"),
+		attribute.String("argus.component", "backend"),
+	)
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
+
+	// Set as the global provider — all otel.Tracer() calls now export to SigNoz
+	otel.SetTracerProvider(tp)
+
+	slog.Info("ARGUS: OTel TracerProvider started → SigNoz Cloud",
+		slog.String("endpoint", endpoint),
+	)
+
+	return tp.Shutdown, nil
+}
 
 func main() {
 	// Load .env.local if it exists
@@ -54,10 +103,9 @@ func main() {
 	signozEndpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	signozIngestionKey := ""
 	if headers := os.Getenv("OTEL_EXPORTER_OTLP_HEADERS"); headers != "" {
-		// Parse "signoz-ingestion-key=xxxx" format using strings.Cut (Go 1.18+)
-		_, v, ok := strings.Cut(headers, "=")
-		if ok {
-			signozIngestionKey = strings.TrimSpace(v)
+		// Parse "signoz-ingestion-key=VALUE" — value may contain = so use index after first =
+		if idx := strings.Index(headers, "="); idx != -1 {
+			signozIngestionKey = strings.TrimSpace(headers[idx+1:])
 		}
 	}
 
@@ -66,9 +114,24 @@ func main() {
 			slog.String("endpoint", signozEndpoint),
 			slog.Int("key_length", len(signozIngestionKey)),
 		)
+		// Bootstrap the real OTel TracerProvider → all governance violations,
+		// MCP tool calls, and agent events ship as spans to SigNoz Cloud.
+		shutdownTracer, err := initTracer(context.Background(), signozEndpoint, signozIngestionKey)
+		if err != nil {
+			slog.Warn("ARGUS: failed to init OTel tracer", slog.String("error", err.Error()))
+		} else {
+			defer shutdownTracer(context.Background())
+		}
 	} else {
 		slog.Warn("ARGUS: no SigNoz Cloud credentials found. Set OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_HEADERS")
 	}
+
+	// Log the public base URL used for OAuth discovery
+	publicBase := os.Getenv("ARGUS_PUBLIC_BASE")
+	if publicBase == "" {
+		publicBase = "http://localhost:8080"
+	}
+	slog.Info("ARGUS: OAuth 2.1 discovery base", slog.String("public_base", publicBase))
 
 	// Initialize SigNoz dependencies from environment or pass nil.
 	// In production, these are wired by the SigNoz query service container.
