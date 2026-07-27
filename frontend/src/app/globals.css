@@ -29,7 +29,15 @@
 }
 
 /* ─── Base ─── */
-html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+html { 
+  scroll-behavior: smooth; 
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+::-webkit-scrollbar {
+  display: none;
+}
 body {
   background: var(--white);
   color: var(--black);
