@@ -18,7 +18,7 @@ When a rule fires (budget exceeded, token explosion, infinite loop), ARGUS block
 
 ---
 
-## Architecture
+## Architecture 
 
 ```
 Claude Web / Claude Desktop / Cursor / VS Code
@@ -90,7 +90,7 @@ ARGUS_LLM_API_KEY="sk-..."
 # ARGUS_BUDGET_LIMIT="50"
 ```
 
-### 3 — Start the backend
+### 3 Start the backend
 
 ```bash
 go run cmd/argus-server/main.go
