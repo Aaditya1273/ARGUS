@@ -1,7 +1,12 @@
-# ARGUS — AI Agent Runtime Governance
+<div align="center">
+
+# ARGUS: AI Agent Runtime Governance
 
 > The autonomous runtime control plane that observes, governs, and enforces policies on your AI agents in real time.
 
+<img width="1672" height="941" alt="signoz" src="https://github.com/user-attachments/assets/bbaade90-0c39-4862-ba23-4126051ebe2f" />
+
+</div>
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-orange)](https://modelcontextprotocol.io)
