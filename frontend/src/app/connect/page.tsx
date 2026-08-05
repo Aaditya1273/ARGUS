@@ -141,12 +141,95 @@ function ConnectInner() {
       
       <div className="w-full max-w-[440px] space-y-6 animate-fadeIn">
         
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <img src="/LOGO.png" alt="ARGUS Logo" className="h-12 w-auto" />
+        {/* Header with Live Connection Animation */}
+        <div className="text-center pt-2">
+          
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes flowDash {
+              0% { stroke-dasharray: 15, 100; stroke-dashoffset: 115; }
+              100% { stroke-dasharray: 15, 100; stroke-dashoffset: 0; }
+            }
+            .animate-flow-dash {
+              animation: flowDash 1.5s linear infinite;
+            }
+            @keyframes pulseGlow {
+              0%, 100% { opacity: 0.5; filter: blur(4px); }
+              50% { opacity: 1; filter: blur(6px); }
+            }
+            .animate-pulse-glow {
+              animation: pulseGlow 2s ease-in-out infinite;
+            }
+          `}} />
+
+          <div className="flex items-center justify-center w-full mb-8 relative px-4">
+            
+            {/* AI Client Node */}
+            <div className="relative z-10 w-[60px] h-[60px] rounded-2xl bg-white border border-gray-100 shadow-xl shadow-gray-200/50 flex items-center justify-center shrink-0">
+              <div className="absolute inset-0 rounded-2xl bg-orange-500/5 animate-pulse"></div>
+              {/* Fallback to Claude logo, or we could use generic AI icon if clientDisplay is unknown */}
+              {clientDisplay.toLowerCase().includes('claude') ? (
+                <img src="/ai-logos/claude-desktop.png" alt={clientDisplay} className="w-9 h-9 object-contain drop-shadow-sm" />
+              ) : clientDisplay.toLowerCase().includes('cursor') ? (
+                <img src="/ai-logos/cursor.png" alt={clientDisplay} className="w-9 h-9 object-contain drop-shadow-sm" />
+              ) : clientDisplay.toLowerCase().includes('antigravity') ? (
+                <img src="/ai-logos/antigravity.png" alt={clientDisplay} className="w-9 h-9 object-contain drop-shadow-sm" />
+              ) : (
+                <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center font-bold text-gray-500">{clientDisplay.charAt(0)}</div>
+              )}
+            </div>
+
+            {/* Animated Connection Bridge */}
+            <div className="flex-1 max-w-[140px] mx-2 relative h-12 flex items-center justify-center">
+              {/* Subtle background track */}
+              <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+              
+              {/* Flowing energy SVG */}
+              <svg className="absolute w-full h-full overflow-visible" viewBox="0 0 100 24" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="flow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#FF6B00" stopOpacity="0.1" />
+                    <stop offset="50%" stopColor="#FF9340" stopOpacity="1" />
+                    <stop offset="100%" stopColor="#D97757" stopOpacity="0.1" />
+                  </linearGradient>
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+                
+                {/* Sine wave path connecting left to right */}
+                <path 
+                  d="M 0,12 C 25,0 75,24 100,12" 
+                  fill="none" 
+                  stroke="url(#flow-gradient)" 
+                  strokeWidth="2.5" 
+                  strokeLinecap="round"
+                  className="animate-flow-dash"
+                  style={{ filter: 'url(#glow)' }}
+                />
+                
+                {/* Secondary inverse wave for DNA/intertwined look */}
+                <path 
+                  d="M 0,12 C 25,24 75,0 100,12" 
+                  fill="none" 
+                  stroke="url(#flow-gradient)" 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round"
+                  className="animate-flow-dash opacity-60"
+                  style={{ animationDelay: '0.75s', filter: 'url(#glow)' }}
+                />
+              </svg>
+            </div>
+
+            {/* ARGUS Node */}
+            <div className="relative z-10 w-[60px] h-[60px] rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#D97757] border border-orange-400 shadow-xl shadow-orange-500/30 flex items-center justify-center shrink-0">
+              <div className="absolute -inset-1 rounded-2xl bg-orange-500/30 animate-pulse-glow pointer-events-none"></div>
+              <img src="/LOGO.png" alt="ARGUS Logo" className="w-[30px] h-auto object-contain brightness-0 invert" />
+            </div>
+            
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Connect to ARGUS</h1>
+          
+          <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Connect to ARGUS</h1>
           <p className="text-sm text-gray-500 mt-2">
             <span className="text-gray-900 font-semibold">{clientDisplay}</span> wants to use the ARGUS MCP tools
           </p>
