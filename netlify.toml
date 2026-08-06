@@ -9,3 +9,9 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/*"
+  to = "https://argus-signoz.vercel.app/:splat"
+  status = 301
+  force = true
