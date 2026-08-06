@@ -22,6 +22,8 @@ import {
 import { Caveat } from 'next/font/google'
 import { motion } from 'framer-motion'
 import { WordsPullUp } from '@/components/ui/words-pull-up'
+import { AnnouncementBanner } from '@/components/AnnouncementBanner'
+import Grainient from '@/components/ui/Grainient'
 
 const caveat = Caveat({ subsets: ['latin'], weight: '400' })
 
@@ -643,17 +645,85 @@ function Footer() {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   CTA SECTION
+   ══════════════════════════════════════════════════════════════ */
+
+function CtaSection() {
+  const [ref, isVisible] = useReveal<HTMLDivElement>()
+  
+  return (
+    <section ref={ref} className="relative py-24 sm:py-32 overflow-hidden bg-white">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
+        <div className={`relative isolate overflow-hidden bg-gray-900 px-6 py-24 text-center shadow-2xl sm:rounded-3xl sm:px-16 transition-all duration-1000 transform ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'}`}>
+          {/* Glowing edge effect */}
+          <div className="absolute inset-0 border border-white/10 sm:rounded-3xl pointer-events-none z-10" />
+          
+          <div className="absolute inset-0 z-0 opacity-40">
+            <Grainient
+              color1="#0A0A0A"
+              color2="#FF6B00"
+              color3="#111827"
+              timeSpeed={0.15}
+              warpStrength={1.5}
+              warpSpeed={1.5}
+              noiseScale={1.5}
+              blendSoftness={0.2}
+              grainAmount={0.08}
+            />
+          </div>
+
+          <h2 className="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-5xl relative z-20">
+            LIFETIME FREE PLAN 
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300 relative z-20">
+            <strong className="text-[#FF6B00] font-semibold text-xl tracking-wide uppercase block mb-2">Only for FIRST 1000 BUILDERS</strong>
+            Lock in a <strong className="text-white">Lifetime Free Plan</strong> (available only for the first 1000 users). 
+            Deploy ARGUS in seconds and enforce enterprise-grade security on every tool call your agents make.
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-x-6 relative z-20">
+            <Link
+              href="/connect"
+              className="rounded-full bg-gradient-to-r from-[#FF6B00] to-orange-500 px-8 py-4 text-sm font-bold tracking-wide text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B00] transition-all duration-300 uppercase"
+            >
+              Claim Lifetime Free Access
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════════
    MAIN PAGE
    ══════════════════════════════════════════════════════════════ */
 
 export default function LandingPage() {
+  const [bannerVisible, setBannerVisible] = useState(false)
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem('argus-banner-dismissed')
+    if (!dismissed) setBannerVisible(true)
+  }, [])
+
+  const handleDismissBanner = () => {
+    setBannerVisible(false)
+    localStorage.setItem('argus-banner-dismissed', 'true')
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      {bannerVisible && (
+        <div className="relative z-[60]">
+          <AnnouncementBanner onDismiss={handleDismissBanner} />
+        </div>
+      )}
       <Navigation />
       <HeroSection />
       <ArchitectureSection />
       <IntegrationsSection />
       <SecuritySection />
+      <CtaSection />
       <Footer />
     </div>
   )
