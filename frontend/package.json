@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "antd": "^5.11.0",
     "axios": "^1.18.0",
@@ -22,6 +23,7 @@
     "next-auth": "^5.0.0-beta.32",
     "nuqs": "^2.9.2",
     "overlayscrollbars": "^2.16.0",
+    "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-helmet-async": "^3.0.0",
@@ -34,6 +36,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
