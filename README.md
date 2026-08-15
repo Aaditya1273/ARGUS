@@ -2,7 +2,7 @@
 
 <img width="1672" height="941" alt="ARGUS Dashboard — AI Agent Runtime Governance Control Plane" src="https://github.com/user-attachments/assets/bbaade90-0c39-4862-ba23-4126051ebe2f" />
 
-# ARGUS — AI Agent Runtime Governance & Cost Firewall
+# ARGUS —- AI Agent Runtime Governance & Cost Firewall
 
 **The autonomous runtime control plane that observes, meters, and enforces policy on every MCP tool call your AI agents make — in real time.**
 
